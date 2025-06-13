@@ -15,13 +15,17 @@ interface RichTextEditorProps {
   onChange: (content: string) => void;
   placeholder?: string;
   className?: string;
+  onFocus?: () => void;
+  onBlur?: () => void;
 }
 
 export const RichTextEditor: React.FC<RichTextEditorProps> = ({
   content,
   onChange,
   placeholder = "Start writing your note...",
-  className = ""
+  className = "",
+  onFocus,
+  onBlur
 }) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const [format, setFormat] = useState<RichTextFormat>({
@@ -207,6 +211,8 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
         contentEditable
         onInput={handleInput}
         onKeyDown={handleKeyDown}
+        onFocus={onFocus}
+        onBlur={onBlur}
         className="p-4 min-h-[300px] focus:outline-none rich-text-editor"
         style={{ fontSize: `${format.fontSize}px` }}
         data-placeholder={placeholder}

@@ -56,10 +56,13 @@ const GlossaryHighlighter: React.FC<GlossaryHighlighterProps> = ({
   const processedContent = useMemo(() => {
     if (!content) return null;
 
-    const plainText = content.replace(/<[^>]*>/g, '');
+    // Clean any existing glossary spans to avoid double processing
+    let cleanContent = content.replace(/<span[^>]*class="glossary-term"[^>]*>(.*?)<\/span>/gi, '$1');
+    
+    const plainText = cleanContent.replace(/<[^>]*>/g, '');
     
     if (!plainText.trim()) {
-      return <div dangerouslySetInnerHTML={{ __html: content }} />;
+      return <div dangerouslySetInnerHTML={{ __html: cleanContent }} />;
     }
 
     try {
@@ -67,16 +70,16 @@ const GlossaryHighlighter: React.FC<GlossaryHighlighterProps> = ({
       const terms = aiService.identifyKeyTerms(plainText);
 
       if (terms.length === 0) {
-        return <div dangerouslySetInnerHTML={{ __html: content }} />;
+        return <div dangerouslySetInnerHTML={{ __html: cleanContent }} />;
       }
 
-      let processed = content;
+      let processed = cleanContent;
       const sortedTerms = terms.sort((a, b) => b.length - a.length);
       
       sortedTerms.forEach((term, index) => {
         const regex = new RegExp(`\\b(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})\\b`, 'gi');
         processed = processed.replace(regex, (match) => {
-          return `<span class="glossary-term" data-term="${match}" data-term-id="${index}">${match}</span>`;
+          return `<span class="glossary-term" data-term="${match.toLowerCase()}" data-term-id="${index}">${match}</span>`;
         });
       });
 

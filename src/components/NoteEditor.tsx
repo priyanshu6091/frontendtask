@@ -11,8 +11,6 @@ import {
   Save, 
   Pin, 
   Trash2, 
-  Eye, 
-  Edit3, 
   ArrowLeft, 
   Sparkles, 
   Lock, 
@@ -47,11 +45,11 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
 }) => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [showAIInsights, setShowAIInsights] = useState(false);
   const [showEncryptionModal, setShowEncryptionModal] = useState(false);
   const [isGrammarCheckExpanded, setIsGrammarCheckExpanded] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   
   const editorRef = useRef<HTMLDivElement>(null);
   const lastSavedContentRef = useRef('');
@@ -65,12 +63,14 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       lastSavedContentRef.current = note.content;
       lastSavedTitleRef.current = note.title;
       setHasChanges(false);
+      setIsEditing(false); // Start in view mode for existing notes
     } else {
       setTitle('');
       setContent('');
       lastSavedContentRef.current = '';
       lastSavedTitleRef.current = '';
       setHasChanges(false);
+      setIsEditing(true); // Start in edit mode for new notes
     }
   }, [note?.id]);
 
@@ -206,18 +206,6 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
               </div>
 
               <div className="flex items-center gap-2 flex-shrink-0">
-                <button
-                  onClick={() => setIsPreviewMode(!isPreviewMode)}
-                  className={clsx(
-                    'p-2 rounded-lg transition-colors',
-                    isPreviewMode
-                      ? 'bg-blue-100 text-blue-600'
-                      : 'text-gray-600 hover:bg-gray-100'
-                  )}
-                >
-                  {isPreviewMode ? <Edit3 size={18} /> : <Eye size={18} />}
-                </button>
-
                 {enableAIInsights && !note?.isEncrypted && (
                   <button
                     onClick={() => setShowAIInsights(!showAIInsights)}
@@ -304,40 +292,46 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                 className="w-full text-xl font-semibold bg-transparent border-none outline-none"
               />
             </div>
-          )}
-
-          {/* Content Area */}
+          )}          {/* Content Area - Smart Inline Editor */}
           <div className="flex-1 flex flex-col overflow-hidden">
-            {isPreviewMode ? (
-              // Preview Mode
-              <div className="flex-1 overflow-y-auto" style={{ scrollBehavior: 'smooth' }}>
-                <div className="p-4 md:p-6">
-                  <div className="max-w-4xl mx-auto">
-                    {content ? (
-                      <div className="prose prose-sm md:prose-lg max-w-none">
-                        <GlossaryHighlighter content={content} />
-                      </div>
-                    ) : (
-                      <p className="text-gray-500 italic">No content</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              // Edit Mode
-              <div className="flex-1 overflow-y-auto" style={{ scrollBehavior: 'smooth' }} ref={editorRef}>
-                <div className="p-4 md:p-6">
-                  <div className="max-w-4xl mx-auto">
+            <div className="flex-1 overflow-y-auto" style={{ scrollBehavior: 'smooth' }} ref={editorRef}>
+              <div className="p-4 md:p-6">
+                <div className="max-w-4xl mx-auto">
+                  {!isEditing && content && !note?.isEncrypted ? (
+                    // View mode with glossary highlighting
+                    <div 
+                      className="prose prose-sm md:prose-lg max-w-none cursor-text min-h-[400px] md:min-h-[500px] p-4 border border-gray-300 rounded-lg"
+                      onClick={() => setIsEditing(true)}
+                    >
+                      <GlossaryHighlighter content={content} />
+                    </div>
+                  ) : !isEditing && !content && !note?.isEncrypted ? (
+                    // Empty state
+                    <div 
+                      className="cursor-text min-h-[400px] md:min-h-[500px] p-4 border border-gray-300 rounded-lg flex items-center justify-center text-gray-500 italic"
+                      onClick={() => setIsEditing(true)}
+                    >
+                      Click to start writing your note...
+                    </div>
+                  ) : note?.isEncrypted ? (
+                    // Encrypted state
+                    <div className="min-h-[400px] md:min-h-[500px] p-4 border border-gray-300 rounded-lg flex items-center justify-center text-gray-500 italic">
+                      🔒 This note is encrypted. Click unlock to view content.
+                    </div>
+                  ) : (
+                    // Edit mode with rich text editor
                     <RichTextEditor
                       content={content}
                       onChange={setContent}
                       placeholder="Start writing your note..."
                       className="min-h-[400px] md:min-h-[500px]"
+                      onFocus={() => setIsEditing(true)}
+                      onBlur={() => setIsEditing(false)}
                     />
-                  </div>
+                  )}
                 </div>
               </div>
-            )}
+            </div>
 
             {/* Grammar Check - Expandable Section */}
             {enableGrammarCheck && content && !note?.isEncrypted && (
