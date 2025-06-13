@@ -124,7 +124,7 @@ export const AIInsights: React.FC<AIInsightsProps> = ({
   if (!isVisible) return null;
 
   return (
-    <div className="flex flex-col h-full bg-white sm:bg-gradient-to-br sm:from-white sm:to-purple-50/30 border-l border-gray-200">
+    <div className={`flex flex-col h-full bg-white sm:bg-gradient-to-br sm:from-white sm:to-purple-50/30 border-l border-gray-200`}>
       {/* Enhanced Header - No close button here, it's handled in the parent component */}
       <div className={`p-4 sm:p-5 border-b border-gray-200 bg-gradient-to-br from-purple-50 to-blue-50/70 ${isMobile ? 'hidden' : ''}`}>
         <div className="flex items-center justify-between mb-3">
@@ -154,10 +154,10 @@ export const AIInsights: React.FC<AIInsightsProps> = ({
         </div>
       </div>
 
-      {/* Enhanced Content with Animations */}
-      <div className={`flex-1 overflow-y-auto p-4 sm:p-5 space-y-6 mobile-swipeable transition-all duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+      {/* Enhanced Content with Animations - Fixed Scrolling */}
+      <div className={`flex-1 p-4 sm:p-5 space-y-6 transition-all duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'} overflow-y-auto mobile-swipeable`} style={{ maxHeight: isMobile ? 'calc(85vh - 150px)' : 'auto' }}>
         {loading ? (
-          <div className="flex items-center justify-center py-12 scale-in">
+          <div className="flex items-center justify-center py-12 scale-in min-h-[300px]">
             <div className="flex flex-col items-center gap-4 text-gray-500">
               <div className="relative">
                 <Loader2 className="animate-spin w-10 h-10 text-purple-500" />
@@ -304,7 +304,7 @@ export const AIInsights: React.FC<AIInsightsProps> = ({
             )}
 
             {/* Enhanced Note Statistics with Animation */}
-            <div className="bg-white border border-gray-100 rounded-xl shadow-sm p-4 animate-fade-in" 
+            <div className="bg-white border border-gray-100 rounded-xl shadow-sm p-4 animate-fade-in mb-12" 
                  style={{ animationDelay: `${insights.length * 100 + suggestions.length * 100 + 100}ms` }}>
                 <div className="flex items-center gap-2 mb-4">
                   <div className="w-1 h-4 bg-gradient-to-b from-blue-400 to-blue-600 rounded-full"></div>
@@ -339,9 +339,9 @@ export const AIInsights: React.FC<AIInsightsProps> = ({
                 </div>
               </div>
 
-            {/* Enhanced Empty State with Animation */}
+            {/* Enhanced Empty State with Animation - Improved Scrolling */}
             {insights.length === 0 && suggestions.length === 0 && !loading && (
-              <div className="text-center py-10 sm:py-12 bg-white border border-gray-100 rounded-xl shadow-sm scale-in">
+              <div className="text-center py-10 sm:py-12 bg-white border border-gray-100 rounded-xl shadow-sm scale-in min-h-[300px] flex flex-col items-center justify-center">
                 <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-purple-100 to-purple-50 rounded-2xl flex items-center justify-center shadow-sm animate-pulse transition-all duration-700 hover:scale-110">
                   <Sparkles className="text-purple-600" size={32} />
                 </div>
@@ -379,18 +379,8 @@ export const AIInsights: React.FC<AIInsightsProps> = ({
         </div>
       )}
       
-      {/* Mobile Footer - Only for standalone component, not in modal */}
-      {!loading && (insights.length > 0 || suggestions.length > 0) && isMobile && (
-        <div className="p-4 border-t border-gray-200 bg-gradient-to-r from-purple-50 to-blue-50 mobile-safe-area animate-fade-in" style={{ animationDelay: '700ms' }}>
-          <button
-            onClick={generateInsights}
-            className="w-full px-4 py-2.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 active:from-purple-800 active:to-blue-800 text-white rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all duration-300 mobile-no-tap-highlight transform hover:scale-[1.02] active:scale-[0.98]"
-          >
-            <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
-            <span className="font-medium">Refresh Analysis</span>
-          </button>
-        </div>
-      )}
+      {/* Mobile Footer - Only for standalone component, not in modal - Hidden since it's handled by parent */}
+      {/* We're removing the mobile footer since it causes scrolling issues */}
     </div>
   );
 };

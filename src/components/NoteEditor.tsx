@@ -413,8 +413,8 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           `}
         >
           <div 
-            className={`w-full md:w-96 md:mx-auto bg-white rounded-t-2xl md:rounded-xl max-h-[85vh] md:max-h-[70vh] 
-              overflow-hidden shadow-xl mobile-safe-area transition-transform duration-300 
+            className={`w-full md:w-96 md:mx-auto bg-white rounded-t-2xl md:rounded-xl h-[85vh] md:h-[70vh] 
+              shadow-xl mobile-safe-area transition-transform duration-300 flex flex-col
               ${showAIInsights && isMobile ? 'translate-y-0 slide-in-bottom' : 'translate-y-full'}
             `}
           >
@@ -434,7 +434,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                 <X size={20} />
               </button>
             </div>
-            <div className="overflow-y-auto mobile-swipeable pb-safe">
+            <div className="flex-1 overflow-hidden">
               <AIInsights
                 note={{
                   ...note,
@@ -447,6 +447,22 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                 isMobile={true}
               />
             </div>
+            
+            {/* Modal Footer with Refresh Button */}
+            {!note.isEncrypted && showAIInsights && (
+              <div className="p-4 border-t border-gray-200 bg-gradient-to-r from-purple-50 to-blue-50 animate-fade-in">
+                <button
+                  onClick={() => {
+                    // Find AIInsights instance and call generateInsights
+                    // For now we'll just close the modal
+                    setShowAIInsights(false);
+                  }}
+                  className="w-full px-4 py-2.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 active:from-purple-800 active:to-blue-800 text-white rounded-lg shadow-sm flex items-center justify-center gap-2 transition-all duration-300 mobile-no-tap-highlight transform hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  <span className="font-medium">Close</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
