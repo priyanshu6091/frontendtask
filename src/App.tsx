@@ -29,15 +29,21 @@ function App() {
     const checkMobile = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
+      
+      // Handle sidebar visibility based on screen size and selected note
       if (mobile) {
-        setIsSidebarOpen(false);
+        // On mobile, only show sidebar if no note is selected
+        setIsSidebarOpen(!selectedNote);
+      } else {
+        // On desktop, always show sidebar
+        setIsSidebarOpen(true);
       }
     };
     
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  }, [selectedNote]);
 
   // Auto-select welcome note for first-time users
   useEffect(() => {
@@ -129,14 +135,15 @@ function App() {
   }
 
   return (
-    <div className="h-screen bg-gray-100 overflow-hidden">
+    <div className="h-screen bg-gray-100 overflow-hidden mobile-safe-area">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+      <header className="bg-white shadow-sm border-b border-gray-200 px-4 py-3 flex items-center justify-between sticky top-0 z-30">
         <div className="flex items-center gap-3">
           {isMobile && (
             <button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors mobile-no-tap-highlight"
+              aria-label={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
             >
               {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
@@ -144,7 +151,7 @@ function App() {
           
           <div className="flex items-center gap-2">
             <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-lg">
-              <StickyNote className="text-white" size={20} />
+              <StickyNote className="text-white" size={isMobile ? 18 : 20} />
             </div>
             <h1 className="text-xl font-bold text-gray-900">Smart Notes</h1>
           </div>
@@ -157,13 +164,17 @@ function App() {
       </header>
 
       <div className="flex h-[calc(100vh-64px)]">
-        {/* Sidebar */}
+        {/* Sidebar with Enhanced Animation */}
         <div className={`
-          ${isMobile ? 'fixed inset-y-16 left-0 z-40' : 'relative'}
-          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-          ${isMobile ? 'w-full' : 'w-80'}
-          transition-transform duration-200 ease-in-out
-          bg-white shadow-lg
+          ${isMobile ? 'fixed inset-y-16 left-0 z-40 h-[calc(100%-4rem)]' : 'relative'}
+          ${isMobile ? 'w-[85%] max-w-sm' : 'w-80'}
+          ${isSidebarOpen 
+            ? isMobile ? 'translate-x-0 slide-in-left' : 'translate-x-0' 
+            : '-translate-x-full slide-out-left'
+          }
+          transition-all-smooth
+          bg-white shadow-lg mobile-swipeable
+          ${isMobile ? 'border-r border-gray-200' : ''}
         `}>
           <NotesList
             notes={notes}
@@ -175,10 +186,12 @@ function App() {
           />
         </div>
 
-        {/* Mobile Overlay */}
-        {isMobile && isSidebarOpen && (
+        {/* Mobile Overlay with Enhanced Animation */}
+        {isMobile && (
           <div 
-            className="fixed inset-0 bg-black bg-opacity-50 z-30"
+            className={`fixed inset-0 z-30 transition-opacity duration-300 ease-in-out
+              ${isSidebarOpen ? 'opacity-100 backdrop-fade-in visible' : 'opacity-0 invisible'}
+            `}
             onClick={handleCloseSidebar}
           />
         )}

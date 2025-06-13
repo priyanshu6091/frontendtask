@@ -48,18 +48,21 @@ export const NotesList: React.FC<NotesListProps> = ({
   return (
     <div className="h-full flex flex-col bg-gray-50 border-r border-gray-200">
       {/* Header */}
-      <div className="p-4 border-b border-gray-200 bg-white">
+      <div className="p-4 border-b border-gray-200 bg-white sticky top-0 z-10">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <StickyNote className="text-blue-600" size={24} />
             <h2 className="text-lg font-semibold text-gray-900">Notes</h2>
-            <span className="text-sm text-gray-500">({notes.length})</span>
+            <span className="text-sm text-gray-500 rounded-full bg-gray-100 px-2 py-0.5">
+              {notes.length}
+            </span>
           </div>
           
           <button
             onClick={onCreateNote}
-            className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg transition-colors shadow-sm"
+            className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white p-2 rounded-lg transition-colors shadow-sm active:scale-95 mobile-no-tap-highlight"
             title="Create new note"
+            aria-label="Create new note"
           >
             <Plus size={18} />
           </button>
@@ -73,19 +76,22 @@ export const NotesList: React.FC<NotesListProps> = ({
             placeholder="Search notes..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm shadow-sm mobile-no-tap-highlight"
+            aria-label="Search notes"
           />
         </div>
 
         {/* Filter Controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={() => setShowPinnedOnly(!showPinnedOnly)}
-            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm transition-colors mobile-no-tap-highlight ${
               showPinnedOnly 
                 ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' 
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-300'
             }`}
+            aria-pressed={showPinnedOnly}
+            aria-label={`Show ${showPinnedOnly ? 'all notes' : 'only pinned notes'}`}
           >
             <Filter size={14} />
             <span>Pinned</span>
@@ -115,25 +121,39 @@ export const NotesList: React.FC<NotesListProps> = ({
       </div>
 
       {/* Notes List */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-4 mobile-swipeable pb-20">
         {filteredNotes.length === 0 ? (
           <div className="text-center py-12">
             {searchTerm || showPinnedOnly ? (
-              <div>
+              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
                 <Search className="mx-auto mb-3 text-gray-300" size={48} />
-                <p className="text-gray-500 mb-2">No notes found</p>
+                <p className="text-gray-500 mb-2 font-medium">No notes found</p>
                 <p className="text-gray-400 text-sm">
                   {searchTerm ? 'Try adjusting your search terms' : 'No pinned notes available'}
                 </p>
+                <button 
+                  onClick={() => {
+                    setSearchTerm('');
+                    setShowPinnedOnly(false);
+                  }}
+                  className="mt-4 text-blue-600 hover:text-blue-800 text-sm font-medium"
+                >
+                  Clear filters
+                </button>
               </div>
             ) : (
-              <div>
-                <StickyNote className="mx-auto mb-3 text-gray-300" size={48} />
-                <p className="text-gray-500 mb-2">No notes yet</p>
-                <p className="text-gray-400 text-sm mb-4">Create your first note to get started</p>
+              <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                <div className="relative w-16 h-16 mx-auto mb-4">
+                  <div className="absolute inset-0 bg-blue-100 rounded-full opacity-30 animate-ping"></div>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <StickyNote className="text-blue-600" size={32} />
+                  </div>
+                </div>
+                <p className="text-gray-700 mb-2 font-medium text-lg">No notes yet</p>
+                <p className="text-gray-500 text-sm mb-5">Create your first note to get started</p>
                 <button
                   onClick={onCreateNote}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+                  className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-5 py-2.5 rounded-lg transition-colors shadow-sm font-medium active:scale-95"
                 >
                   Create Note
                 </button>
@@ -141,7 +161,7 @@ export const NotesList: React.FC<NotesListProps> = ({
             )}
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-3 pb-safe">
             {filteredNotes.map(note => (
               <NoteCard
                 key={note.id}

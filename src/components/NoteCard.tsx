@@ -69,10 +69,12 @@ export const NoteCard: React.FC<NoteCardProps> = ({
     <div
       onClick={handleClick}
       className={clsx(
-        'group p-4 border-b border-gray-200 cursor-pointer transition-all duration-200 hover:bg-gray-50',
-        isSelected && 'bg-blue-50 border-blue-200',
-        note.isPinned && 'bg-yellow-50 border-yellow-200',
-        isWelcomeNote && 'bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200 hover:from-purple-100 hover:to-blue-100'
+        'group p-4 rounded-xl mb-3 cursor-pointer transition-all duration-200 mobile-no-tap-highlight',
+        'border border-gray-200 hover:border-gray-300 sm:hover:shadow-md',
+        'active:bg-gray-50 sm:hover:bg-gray-50',
+        isSelected && 'bg-blue-50 border-blue-300 shadow-md',
+        note.isPinned && !isSelected && 'bg-yellow-50 border-yellow-200',
+        isWelcomeNote && !isSelected && 'bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200 hover:from-purple-100 hover:to-blue-100'
       )}
     >
       {/* Special welcome note indicator */}
@@ -89,13 +91,14 @@ export const NoteCard: React.FC<NoteCardProps> = ({
         <div className="flex-1 min-w-0">
           <h3 className={clsx(
             'font-medium text-gray-900 truncate',
-            note.isPinned && 'text-yellow-800'
+            note.isPinned && 'text-yellow-800',
+            isSelected && 'font-semibold',
           )}>
             {note.title || 'Untitled Note'}
           </h3>
           
           {/* Metadata */}
-          <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-gray-500">
             <div className="flex items-center gap-1">
               <Calendar size={12} />
               <span>{formatDate(note.updatedAt)}</span>
@@ -109,17 +112,29 @@ export const NoteCard: React.FC<NoteCardProps> = ({
             {note.wordCount && (
               <span>{note.wordCount} words</span>
             )}
+            
+            {note.isEncrypted && (
+              <div className="flex items-center gap-1 text-gray-500">
+                <Lock size={12} />
+                <span>Encrypted</span>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Action buttons */}
-        <div className="flex items-center gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        {/* Action buttons - Visible on hover on desktop, always visible on mobile with reduced opacity */}
+        <div className="flex items-center gap-1 ml-2 
+            sm:opacity-0 sm:group-hover:opacity-100 sm:transition-opacity
+            opacity-70 touch-action-none">
           <button
             onClick={handlePinClick}
             className={clsx(
-              'p-1 rounded hover:bg-gray-200 transition-colors',
-              note.isPinned ? 'text-yellow-600' : 'text-gray-400'
+              'p-1.5 rounded-full transition-colors mobile-no-tap-highlight active:scale-95',
+              note.isPinned 
+                ? 'text-yellow-600 bg-yellow-50' 
+                : 'text-gray-400 hover:bg-gray-100 active:bg-gray-200'
             )}
+            aria-label={note.isPinned ? 'Unpin note' : 'Pin note'}
             title={note.isPinned ? 'Unpin note' : 'Pin note'}
           >
             <Pin size={16} className={note.isPinned ? 'fill-current' : ''} />
@@ -127,7 +142,8 @@ export const NoteCard: React.FC<NoteCardProps> = ({
           
           <button
             onClick={handleDeleteClick}
-            className="p-1 rounded hover:bg-red-100 hover:text-red-600 text-gray-400 transition-colors"
+            className="p-1.5 rounded-full hover:bg-red-50 active:bg-red-100 hover:text-red-600 active:text-red-700 text-gray-400 transition-colors mobile-no-tap-highlight active:scale-95"
+            aria-label="Delete note"
             title="Delete note"
           >
             <Trash2 size={16} />

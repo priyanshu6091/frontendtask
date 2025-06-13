@@ -146,10 +146,10 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       <div className="flex-shrink-0 bg-white border-b border-gray-200">
         {isMobile ? (
           // Mobile Header
-          <div className="flex items-center justify-between p-3">
+          <div className="flex items-center justify-between p-3 bg-white border-b border-gray-200 shadow-sm sticky top-0 z-10">
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-gray-100 active:bg-gray-200 rounded-full transition-colors mobile-no-tap-highlight"
               aria-label="Back to notes"
             >
               <ArrowLeft size={20} />
@@ -164,13 +164,14 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                 <button
                   onClick={() => onPin(note.id)}
                   className={clsx(
-                    'p-2 rounded-lg transition-colors',
+                    'p-2 rounded-full transition-colors mobile-no-tap-highlight',
                     note.isPinned
                       ? 'text-yellow-600 bg-yellow-50'
-                      : 'text-gray-400 hover:bg-gray-100'
+                      : 'text-gray-400 hover:bg-gray-100 active:bg-gray-200'
                   )}
+                  aria-label={note.isPinned ? "Unpin note" : "Pin note"}
                 >
-                  <Pin size={16} />
+                  <Pin size={18} className={note.isPinned ? 'fill-current' : ''} />
                 </button>
               )}
               
@@ -205,18 +206,20 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                 />
               </div>
 
-              <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                 {enableAIInsights && !note?.isEncrypted && (
                   <button
                     onClick={() => setShowAIInsights(!showAIInsights)}
                     className={clsx(
-                      'p-2 rounded-lg transition-colors',
+                      'p-2 rounded-full sm:rounded-lg transition-colors mobile-no-tap-highlight',
                       showAIInsights
                         ? 'bg-purple-100 text-purple-600'
-                        : 'text-gray-600 hover:bg-gray-100'
+                        : 'text-gray-600 hover:bg-gray-100 active:bg-gray-200'
                     )}
+                    aria-label={showAIInsights ? "Hide AI insights" : "Show AI insights"}
+                    title={showAIInsights ? "Hide AI insights" : "Show AI insights"}
                   >
-                    <Brain size={18} />
+                    <Brain size={isMobile ? 20 : 18} />
                   </button>
                 )}
 
@@ -225,49 +228,72 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                     <button
                       onClick={() => setShowEncryptionModal(true)}
                       className={clsx(
-                        'p-2 rounded-lg transition-colors',
+                        'p-2 rounded-full sm:rounded-lg transition-colors mobile-no-tap-highlight',
                         note.isEncrypted
                           ? 'text-green-600 bg-green-50'
-                          : 'text-gray-600 hover:bg-gray-100'
+                          : 'text-gray-600 hover:bg-gray-100 active:bg-gray-200'
                       )}
+                      aria-label={note.isEncrypted ? "Unlock note" : "Lock note"}
+                      title={note.isEncrypted ? "Unlock note" : "Lock note"}
                     >
-                      {note.isEncrypted ? <Unlock size={18} /> : <Lock size={18} />}
+                      {note.isEncrypted ? <Unlock size={isMobile ? 20 : 18} /> : <Lock size={isMobile ? 20 : 18} />}
                     </button>
 
                     <button
                       onClick={() => onPin(note.id)}
                       className={clsx(
-                        'p-2 rounded-lg transition-colors',
+                        'p-2 rounded-full sm:rounded-lg transition-colors mobile-no-tap-highlight',
                         note.isPinned
                           ? 'text-yellow-600 bg-yellow-50'
-                          : 'text-gray-600 hover:bg-gray-100'
+                          : 'text-gray-600 hover:bg-gray-100 active:bg-gray-200'
                       )}
+                      aria-label={note.isPinned ? "Unpin note" : "Pin note"}
+                      title={note.isPinned ? "Unpin note" : "Pin note"}
                     >
-                      <Pin size={18} />
+                      <Pin size={isMobile ? 20 : 18} className={note.isPinned ? 'fill-current' : ''} />
                     </button>
 
                     <button
                       onClick={() => onDelete(note.id)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      className="p-2 text-red-600 hover:bg-red-50 active:bg-red-100 rounded-full sm:rounded-lg transition-colors mobile-no-tap-highlight"
+                      aria-label="Delete note"
+                      title="Delete note"
                     >
-                      <Trash2 size={18} />
+                      <Trash2 size={isMobile ? 20 : 18} />
                     </button>
                   </>
                 )}
 
-                <button
-                  onClick={handleSave}
-                  disabled={!hasChanges}
-                  className={clsx(
-                    'px-4 py-2 rounded-lg font-medium transition-colors',
-                    hasChanges
-                      ? 'bg-blue-600 text-white hover:bg-blue-700'
-                      : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                  )}
-                >
-                  <Save size={16} className="mr-2" />
-                  Save
-                </button>
+                {isMobile ? (
+                  <button
+                    onClick={handleSave}
+                    disabled={!hasChanges}
+                    className={clsx(
+                      'p-2 rounded-full transition-colors mobile-no-tap-highlight',
+                      hasChanges
+                        ? 'bg-blue-600 text-white active:bg-blue-700'
+                        : 'bg-gray-200 text-gray-500'
+                    )}
+                    aria-label="Save note"
+                    title="Save note"
+                  >
+                    <Save size={20} />
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleSave}
+                    disabled={!hasChanges}
+                    className={clsx(
+                      'px-4 py-2 rounded-lg font-medium transition-colors flex items-center',
+                      hasChanges
+                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                        : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                    )}
+                  >
+                    <Save size={16} className="mr-2" />
+                    Save
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -375,25 +401,40 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
               allNotes={allNotes}
               isVisible={showAIInsights}
               onClose={() => setShowAIInsights(false)}
+              isMobile={false}
             />
           </div>
         )}
-      </div>
-
-      {/* Mobile AI Insights Modal */}
-      {showAIInsights && isMobile && note && !note.isEncrypted && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end md:items-center">
-          <div className="w-full md:w-96 md:mx-auto bg-white rounded-t-lg md:rounded-lg max-h-[80vh] md:max-h-[70vh] overflow-hidden">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <h3 className="font-semibold text-gray-800">AI Insights</h3>
+      </div>        {/* Mobile AI Insights Modal with Enhanced Animation */}
+      {note && !note.isEncrypted && (
+        <div 
+          className={`fixed inset-0 z-50 flex items-end md:items-center transition-opacity duration-300
+            ${showAIInsights && isMobile ? 'opacity-100 visible backdrop-fade-in' : 'opacity-0 invisible pointer-events-none'}
+          `}
+        >
+          <div 
+            className={`w-full md:w-96 md:mx-auto bg-white rounded-t-2xl md:rounded-xl max-h-[85vh] md:max-h-[70vh] 
+              overflow-hidden shadow-xl mobile-safe-area transition-transform duration-300 
+              ${showAIInsights && isMobile ? 'translate-y-0 slide-in-bottom' : 'translate-y-full'}
+            `}
+          >
+            <div className="flex flex-col items-center pt-2 pb-1">
+              <div className="w-10 h-1 bg-gray-300 rounded-full mb-1"></div>
+            </div>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+              <div className="flex items-center gap-2">
+                <Brain size={18} className="text-purple-600" />
+                <h3 className="font-semibold text-gray-800">AI Insights</h3>
+              </div>
               <button
                 onClick={() => setShowAIInsights(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-gray-100 active:bg-gray-200 rounded-full transition-colors mobile-no-tap-highlight"
+                aria-label="Close AI insights"
               >
                 <X size={20} />
               </button>
             </div>
-            <div className="overflow-y-auto">
+            <div className="overflow-y-auto mobile-swipeable pb-safe">
               <AIInsights
                 note={{
                   ...note,
@@ -401,8 +442,9 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                   content: content
                 }}
                 allNotes={allNotes}
-                isVisible={showAIInsights}
+                isVisible={showAIInsights && isMobile}
                 onClose={() => setShowAIInsights(false)}
+                isMobile={true}
               />
             </div>
           </div>
