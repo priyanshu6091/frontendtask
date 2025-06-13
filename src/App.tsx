@@ -4,7 +4,6 @@ import { useNotes } from './hooks/useNotes';
 import { useUserPreferences } from './hooks/useUserPreferences';
 import { NotesList } from './components/NotesList';
 import { NoteEditor } from './components/NoteEditor';
-import { WelcomeToast } from './components/WelcomeToast';
 import { AIService } from './services/aiService';
 import { StickyNote, Sparkles, Menu, X } from 'lucide-react';
 
@@ -23,7 +22,6 @@ function App() {
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
-  const [showWelcomeToast, setShowWelcomeToast] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -45,32 +43,7 @@ function App() {
     return () => window.removeEventListener('resize', checkMobile);
   }, [selectedNote]);
 
-  // Auto-select welcome note for first-time users
-  useEffect(() => {
-    if (!loading && notes.length > 0 && !selectedNote) {
-      // Check if this is a first visit by looking for welcome note
-      const welcomeNote = notes.find(note => note.id === 'welcome-note');
-      if (welcomeNote) {
-        setSelectedNote(welcomeNote);
-        // Check if this is a first visit
-        const hasSeenWelcome = sessionStorage.getItem('smartnotes-welcome-shown');
-        if (!hasSeenWelcome) {
-          sessionStorage.setItem('smartnotes-welcome-shown', 'true');
-          setShowWelcomeToast(true);
-        }
-      }
-    }
-  }, [loading, notes, selectedNote]);
-
-  // Force welcome note to show on first app load if no note is selected
-  useEffect(() => {
-    if (!loading && notes.length > 0 && !selectedNote) {
-      const welcomeNote = notes.find(note => note.id === 'welcome-note');
-      if (welcomeNote) {
-        setSelectedNote(welcomeNote);
-      }
-    }
-  }, [loading, notes]);
+  // No need to auto-select notes here in the new version
 
   const handleCreateNote = () => {
     const newNote = createNote();
@@ -198,17 +171,52 @@ function App() {
 
         {/* Main Content */}
         <div className="flex-1 overflow-hidden">
-          <NoteEditor
-            note={selectedNote}
-            allNotes={notes}
-            onSave={handleSaveNote}
-            onDelete={handleDeleteNote}
-            onPin={pinNote}
-            onClose={handleCloseEditor}
-            isMobile={isMobile}
-            enableGrammarCheck={preferences.enableGrammarCheck}
-            enableAIInsights={preferences.enableAI}
-          />
+          {selectedNote ? (
+            <NoteEditor
+              note={selectedNote}
+              allNotes={notes}
+              onSave={handleSaveNote}
+              onDelete={handleDeleteNote}
+              onPin={pinNote}
+              onClose={handleCloseEditor}
+              isMobile={isMobile}
+              enableGrammarCheck={preferences.enableGrammarCheck}
+              enableAIInsights={preferences.enableAI}
+            />
+          ) : (
+            <div className="h-full flex flex-col items-center justify-center bg-gradient-to-br from-white to-blue-50/30 p-6">
+              <div className="max-w-md w-full text-center">
+                <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 rounded-2xl inline-flex mb-6 shadow-lg">
+                  <StickyNote className="text-white" size={48} />
+                </div>
+                <h1 className="text-3xl font-bold text-gray-800 mb-4">Welcome to Smart Notes</h1>
+                <p className="text-gray-600 mb-8">
+                  Your AI-powered digital workspace for organized thoughts, intelligent insights, and enhanced productivity.
+                </p>
+                <button
+                  onClick={handleCreateNote}
+                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium rounded-xl shadow-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 flex items-center justify-center gap-2 mx-auto"
+                >
+                  <StickyNote size={20} />
+                  Create Your First Note
+                </button>
+                <div className="mt-12 flex flex-wrap gap-4 justify-center">
+                  <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-100 flex items-center gap-2">
+                    <div className="p-2 bg-blue-50 rounded-full">
+                      <Sparkles size={18} className="text-blue-600" />
+                    </div>
+                    <span className="text-sm text-gray-600">AI-Powered Insights</span>
+                  </div>
+                  <div className="bg-white p-3 rounded-lg shadow-sm border border-gray-100 flex items-center gap-2">
+                    <div className="p-2 bg-green-50 rounded-full">
+                      <StickyNote size={18} className="text-green-600" />
+                    </div>
+                    <span className="text-sm text-gray-600">Rich Text Editing</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -225,10 +233,7 @@ function App() {
         </div>
       )}
 
-      {/* Welcome Toast for First-Time Users */}
-      {showWelcomeToast && (
-        <WelcomeToast onDismiss={() => setShowWelcomeToast(false)} />
-      )}
+      {/* No welcome toast in this version */}
     </div>
   );
 }

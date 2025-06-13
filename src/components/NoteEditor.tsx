@@ -411,9 +411,8 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           className={`fixed inset-0 z-50 flex items-end md:items-center transition-opacity duration-300
             ${showAIInsights && isMobile ? 'opacity-100 visible backdrop-fade-in' : 'opacity-0 invisible pointer-events-none'}
           `}
-        >
-          <div 
-            className={`w-full md:w-96 md:mx-auto bg-white rounded-t-2xl md:rounded-xl h-[85vh] md:h-[70vh] 
+        >            <div 
+            className={`w-full md:w-96 md:mx-auto bg-white rounded-t-2xl md:rounded-xl max-h-[85vh] md:max-h-[70vh] 
               shadow-xl mobile-safe-area transition-transform duration-300 flex flex-col
               ${showAIInsights && isMobile ? 'translate-y-0 slide-in-bottom' : 'translate-y-full'}
             `}
@@ -434,7 +433,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                 <X size={20} />
               </button>
             </div>
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 overflow-hidden scrollable-container">
               <AIInsights
                 note={{
                   ...note,

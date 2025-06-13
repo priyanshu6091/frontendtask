@@ -59,6 +59,10 @@ const GlossaryHighlighter: React.FC<GlossaryHighlighterProps> = ({
     // Clean any existing glossary spans to avoid double processing
     let cleanContent = content.replace(/<span[^>]*class="glossary-term"[^>]*>(.*?)<\/span>/gi, '$1');
     
+    // Remove any data-term-id attributes which may be causing display issues
+    cleanContent = cleanContent.replace(/data-term-id="[^"]*"/gi, '');
+    
+    // Extract plain text for term identification (while preserving valid HTML)
     const plainText = cleanContent.replace(/<[^>]*>/g, '');
     
     if (!plainText.trim()) {
@@ -73,19 +77,68 @@ const GlossaryHighlighter: React.FC<GlossaryHighlighterProps> = ({
         return <div dangerouslySetInnerHTML={{ __html: cleanContent }} />;
       }
 
-      let processed = cleanContent;
+      // Use DOM parser to properly handle HTML without breaking it
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(cleanContent, 'text/html');
+      
+      // Find all text nodes in the document
+      const textNodes: Node[] = [];
+      const findTextNodes = (node: Node) => {
+        if (node.nodeType === Node.TEXT_NODE) {
+          textNodes.push(node);
+        } else {
+          node.childNodes.forEach(findTextNodes);
+        }
+      };
+      
+      findTextNodes(doc.body);
+      
+      // Sort terms by length for better matching
       const sortedTerms = terms.sort((a, b) => b.length - a.length);
       
-      sortedTerms.forEach((term, index) => {
-        const regex = new RegExp(`\\b(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})\\b`, 'gi');
-        processed = processed.replace(regex, (match) => {
-          return `<span class="glossary-term" data-term="${match.toLowerCase()}" data-term-id="${index}">${match}</span>`;
+      // Process each text node to highlight terms
+      textNodes.forEach(textNode => {
+        let text = textNode.textContent || '';
+        
+        sortedTerms.forEach((term) => {
+          const regex = new RegExp(`\\b(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})\\b`, 'gi');
+          
+          if (regex.test(text)) {
+            // Create a span for each match
+            const parts = text.split(regex);
+            
+            if (parts.length > 1) {
+              const fragment = document.createDocumentFragment();
+              
+              parts.forEach((part, i) => {
+                if (part.toLowerCase() === term.toLowerCase() && i % 2 === 1) {
+                  // This is a matched term
+                  const span = document.createElement('span');
+                  span.className = 'glossary-term';
+                  span.setAttribute('data-term', part.toLowerCase());
+                  span.textContent = part;
+                  fragment.appendChild(span);
+                } else if (part) {
+                  // This is regular text
+                  fragment.appendChild(document.createTextNode(part));
+                }
+              });
+              
+              const parent = textNode.parentNode;
+              if (parent) {
+                parent.replaceChild(fragment, textNode);
+              }
+            }
+          }
         });
       });
-
+      
+      // Get the processed HTML
+      const processedHtml = doc.body.innerHTML;
+      
       return (
         <div 
-          dangerouslySetInnerHTML={{ __html: processed }}
+          dangerouslySetInnerHTML={{ __html: processedHtml }}
           onMouseOver={handleMouseOver}
           onMouseOut={handleMouseOut}
           onClick={handleClick}
@@ -93,7 +146,7 @@ const GlossaryHighlighter: React.FC<GlossaryHighlighterProps> = ({
       );
     } catch (error) {
       console.error('Error processing glossary terms:', error);
-      return <div dangerouslySetInnerHTML={{ __html: content }} />;
+      return <div dangerouslySetInnerHTML={{ __html: cleanContent }} />;
     }
   }, [content, handleMouseOver, handleMouseOut, handleClick]);
 

@@ -155,7 +155,7 @@ export const AIInsights: React.FC<AIInsightsProps> = ({
       </div>
 
       {/* Enhanced Content with Animations - Fixed Scrolling */}
-      <div className={`flex-1 p-4 sm:p-5 space-y-6 transition-all duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'} overflow-y-auto mobile-swipeable`} style={{ maxHeight: isMobile ? 'calc(85vh - 150px)' : 'auto' }}>
+      <div className={`flex-1 p-4 sm:p-5 space-y-6 transition-all duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'} overflow-y-auto mobile-swipeable`} style={{ height: isMobile ? 'calc(100% - 1rem)' : 'auto' }}>
         {loading ? (
           <div className="flex items-center justify-center py-12 scale-in min-h-[300px]">
             <div className="flex flex-col items-center gap-4 text-gray-500">
@@ -310,31 +310,31 @@ export const AIInsights: React.FC<AIInsightsProps> = ({
                   <div className="w-1 h-4 bg-gradient-to-b from-blue-400 to-blue-600 rounded-full"></div>
                   <h4 className="font-semibold text-gray-800 text-sm">Content Statistics</h4>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-2 lg:grid-cols-4 gap-3 scale-in" 
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 scale-in" 
                      style={{ animationDelay: `${insights.length * 100 + suggestions.length * 100 + 200}ms` }}>
-                  <div className="text-center p-3 bg-blue-50 rounded-xl border border-blue-100 shadow-sm hover:shadow-md transition-all duration-300 animate-fade-in" style={{ animationDelay: '300ms' }}>
-                    <div className="text-xl font-bold text-blue-700">
+                  <div className="text-center p-3 bg-blue-50 rounded-xl border border-blue-100 shadow-sm hover:shadow-md hover:bg-blue-100/50 transition-all duration-300 animate-fade-in flex flex-col justify-center items-center min-h-[90px] aspect-square sm:aspect-auto" style={{ animationDelay: '300ms' }}>
+                    <div className="text-2xl font-bold text-blue-700 overflow-hidden text-ellipsis max-w-full">
                       {note.content.replace(/<[^>]*>/g, '').split(/\s+/).filter(w => w.length > 0).length}
                     </div>
-                    <div className="text-xs text-blue-600 font-medium mt-1">Words</div>
+                    <div className="text-xs text-blue-600 font-medium mt-1.5 uppercase tracking-wide">Words</div>
                   </div>
-                  <div className="text-center p-3 bg-green-50 rounded-xl border border-green-100 shadow-sm hover:shadow-md transition-all duration-300 animate-fade-in" style={{ animationDelay: '400ms' }}>
-                    <div className="text-xl font-bold text-green-700">
+                  <div className="text-center p-3 bg-green-50 rounded-xl border border-green-100 shadow-sm hover:shadow-md hover:bg-green-100/50 transition-all duration-300 animate-fade-in flex flex-col justify-center items-center min-h-[90px] aspect-square sm:aspect-auto" style={{ animationDelay: '350ms' }}>
+                    <div className="text-2xl font-bold text-green-700 overflow-hidden text-ellipsis max-w-full">
                       {note.content.replace(/<[^>]*>/g, '').length}
                     </div>
-                    <div className="text-xs text-green-600 font-medium mt-1">Characters</div>
+                    <div className="text-xs text-green-600 font-medium mt-1.5 uppercase tracking-wide">Characters</div>
                   </div>
-                  <div className="text-center p-3 bg-purple-50 rounded-xl border border-purple-100 shadow-sm hover:shadow-md transition-all duration-300 animate-fade-in" style={{ animationDelay: '500ms' }}>
-                    <div className="text-xl font-bold text-purple-700">
+                  <div className="text-center p-3 bg-purple-50 rounded-xl border border-purple-100 shadow-sm hover:shadow-md hover:bg-purple-100/50 transition-all duration-300 animate-fade-in flex flex-col justify-center items-center min-h-[90px] aspect-square sm:aspect-auto" style={{ animationDelay: '400ms' }}>
+                    <div className="text-2xl font-bold text-purple-700 overflow-hidden text-ellipsis max-w-full">
                       {Math.max(1, Math.ceil(note.content.replace(/<[^>]*>/g, '').split(/\s+/).length / 200))}
                     </div>
-                    <div className="text-xs text-purple-600 font-medium mt-1">Min read</div>
+                    <div className="text-xs text-purple-600 font-medium mt-1.5 uppercase tracking-wide">Min read</div>
                   </div>
-                  <div className="text-center p-3 bg-orange-50 rounded-xl border border-orange-100 shadow-sm hover:shadow-md transition-all duration-300 animate-fade-in" style={{ animationDelay: '600ms' }}>
-                    <div className="text-xl font-bold text-orange-700">
+                  <div className="text-center p-3 bg-orange-50 rounded-xl border border-orange-100 shadow-sm hover:shadow-md hover:bg-orange-100/50 transition-all duration-300 animate-fade-in flex flex-col justify-center items-center min-h-[90px] aspect-square sm:aspect-auto" style={{ animationDelay: '450ms' }}>
+                    <div className="text-2xl font-bold text-orange-700 overflow-hidden text-ellipsis max-w-full">
                       {AIService.getInstance().identifyKeyTerms(note.content.replace(/<[^>]*>/g, '')).length}
                     </div>
-                    <div className="text-xs text-orange-600 font-medium mt-1">AI terms</div>
+                    <div className="text-xs text-orange-600 font-medium mt-1.5 uppercase tracking-wide">AI terms</div>
                   </div>
                 </div>
               </div>
