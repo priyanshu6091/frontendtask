@@ -18,7 +18,9 @@ import {
   Brain,
   X,
   Check,
-  Edit3
+  Edit3,
+  Eye,
+  PencilLine
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -67,7 +69,10 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       lastSavedContentRef.current = note.content;
       lastSavedTitleRef.current = note.title;
       setHasChanges(false);
-      setIsEditing(false); // Start in view mode for existing notes
+      
+      // New notes with content start in view mode, empty notes start in edit mode
+      const hasContent = note.content && note.content.trim().length > 0;
+      setIsEditing(!hasContent || note.isEncrypted || false);
       
       // Show AI insights tooltip for first time users
       const hasSeenAITooltip = localStorage.getItem('hasSeenAITooltip');
@@ -91,6 +96,21 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           setShowGrammarTooltip(false);
           localStorage.setItem('hasSeenGrammarTooltip', 'true');
         }, 6000);
+      }
+      
+      // Show edit/view mode tooltip for first time users
+      const hasSeenEditViewTooltip = localStorage.getItem('hasSeenEditViewTooltip');
+      if (!hasSeenEditViewTooltip && !note.isEncrypted && hasContent) {
+        // Set a flag to show the tooltip later
+        setTimeout(() => {
+          // Briefly highlight the edit/view toggle after other tooltips
+          const editViewButtons = document.querySelectorAll('.edit-view-toggle');
+          editViewButtons.forEach(btn => {
+            btn.classList.add('pulse-animation');
+            setTimeout(() => btn.classList.remove('pulse-animation'), 3000);
+          });
+          localStorage.setItem('hasSeenEditViewTooltip', 'true');
+        }, 7000);
       }
     } else {
       setTitle('');
@@ -222,6 +242,57 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                 </button>
               )}
 
+              {/* Edit/View Toggle for mobile */}
+              {note && !note.isEncrypted && content && (
+                <div className="flex border border-gray-200 rounded-lg overflow-hidden button-pop edit-view-toggle relative">
+                  <button
+                    onClick={() => setIsEditing(false)}
+                    className={clsx(
+                      'px-2 py-1 flex items-center gap-1 text-xs transition-all duration-300',
+                      !isEditing 
+                        ? 'bg-blue-50 text-blue-600 font-medium shadow-inner' 
+                        : 'bg-white text-gray-600 hover:bg-gray-50'
+                    )}
+                  >
+                    <Eye size={14} className={!isEditing ? 'animate-quick-pulse' : ''} />
+                    <span>View</span>
+                  </button>
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className={clsx(
+                      'px-2 py-1 flex items-center gap-1 text-xs transition-all duration-300',
+                      isEditing 
+                        ? 'bg-blue-50 text-blue-600 font-medium shadow-inner' 
+                        : 'bg-white text-gray-600 hover:bg-gray-50'
+                    )}
+                  >
+                    <PencilLine size={14} className={isEditing ? 'animate-quick-pulse' : ''} />
+                    <span>Edit</span>
+                  </button>
+                  
+                  {/* First-time user tooltip for mobile that appears when localStorage flag is set */}
+                  {localStorage.getItem('hasSeenEditViewTooltip') === 'true' && 
+                   localStorage.getItem('hasSeenEditViewTooltipMobile') !== 'true' && (
+                    <div className="absolute -bottom-16 left-0 w-48 bg-blue-800 text-white p-2 rounded-lg shadow-lg z-10 animate-fade-in">
+                      <div className="absolute -top-2 left-4 w-4 h-4 bg-blue-800 transform rotate-45"></div>
+                      <p className="text-xs font-medium">
+                        New! Switch between view and edit modes
+                      </p>
+                      <button 
+                        onClick={() => {
+                          localStorage.setItem('hasSeenEditViewTooltipMobile', 'true');
+                          // Force re-render by updating state
+                          setHasChanges(prev => prev);
+                        }}
+                        className="mt-1 px-2 py-0.5 bg-white text-blue-800 rounded text-xs font-medium"
+                      >
+                        Got it
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+                
               {/* Encryption button for mobile */}
               {note && (
                 <button
@@ -286,6 +357,59 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
               </div>
 
               <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0 slide-up-fade">
+                {/* Edit/View Toggle for Desktop */}
+                {note && !note.isEncrypted && content && (
+                  <div className="hidden sm:flex border border-gray-200 rounded-lg overflow-hidden button-pop shadow-sm edit-view-toggle relative">
+                    <button
+                      onClick={() => setIsEditing(false)}
+                      className={clsx(
+                        'px-3 py-2 flex items-center gap-1.5 text-sm transition-all duration-300',
+                        !isEditing 
+                          ? 'bg-blue-50 text-blue-600 font-medium shadow-inner' 
+                          : 'bg-white text-gray-600 hover:bg-gray-50'
+                      )}
+                      title="Switch to view mode (read-only with term highlights)"
+                    >
+                      <Eye size={16} className={!isEditing ? 'animate-quick-pulse' : ''} />
+                      <span>View</span>
+                    </button>
+                    <button
+                      onClick={() => setIsEditing(true)}
+                      className={clsx(
+                        'px-3 py-2 flex items-center gap-1.5 text-sm transition-all duration-300',
+                        isEditing 
+                          ? 'bg-blue-50 text-blue-600 font-medium shadow-inner' 
+                          : 'bg-white text-gray-600 hover:bg-gray-50'
+                      )}
+                      title="Switch to edit mode (make changes to note)"
+                    >
+                      <PencilLine size={16} className={isEditing ? 'animate-quick-pulse' : ''} />
+                      <span>Edit</span>
+                    </button>
+                    
+                    {/* First-time user tooltip that appears when localStorage flag is set */}
+                    {localStorage.getItem('hasSeenEditViewTooltip') === 'true' && 
+                     localStorage.getItem('hasSeenEditViewTooltipExtended') !== 'true' && (
+                      <div className="absolute top-full mt-2 right-0 w-64 bg-blue-800 text-white p-3 rounded-lg shadow-lg z-10 animate-fade-in">
+                        <div className="absolute -top-2 right-4 w-4 h-4 bg-blue-800 transform rotate-45"></div>
+                        <p className="text-xs font-medium text-appear">
+                          <span className="font-bold">New!</span> Toggle between <span className="font-bold">View</span> and <span className="font-bold">Edit</span> modes to read or modify your notes.
+                        </p>
+                        <button 
+                          onClick={() => {
+                            localStorage.setItem('hasSeenEditViewTooltipExtended', 'true');
+                            // Force re-render by updating state
+                            setHasChanges(prev => prev);
+                          }}
+                          className="mt-2 px-2 py-1 bg-white text-blue-800 rounded text-xs font-medium hover:bg-blue-50"
+                        >
+                          Got it
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {enableAIInsights && !note?.isEncrypted && (
                   <div className="relative">
                     <button
@@ -434,39 +558,46 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
             <div className="flex-1 overflow-y-auto scroll-smooth" style={{ scrollBehavior: 'smooth' }} ref={editorRef}>
               <div className="p-4 md:p-6 fade-in">
                 <div className="max-w-4xl mx-auto slide-up-fade">
-                  {!isEditing && content && !note?.isEncrypted ? (
-                    // View mode with glossary highlighting
-                    <div 
-                      className="prose prose-sm md:prose-lg max-w-none cursor-text min-h-[400px] md:min-h-[500px] p-4 border border-gray-300 rounded-lg hover:border-blue-300 transition-all duration-300 focus-border"
-                      onClick={() => setIsEditing(true)}
-                    >
-                      <GlossaryHighlighter content={content} />
-                    </div>
-                  ) : !isEditing && !content && !note?.isEncrypted ? (
-                    // Empty state
-                    <div 
-                      className="cursor-text min-h-[400px] md:min-h-[500px] p-4 border border-gray-300 rounded-lg flex items-center justify-center text-gray-500 italic hover:border-blue-300 transition-all duration-300 focus-border"
-                      onClick={() => setIsEditing(true)}
-                    >
-                      <span className="typewriter">Click to start writing your note...</span>
-                    </div>
-                  ) : note?.isEncrypted ? (
-                    // Encrypted state
-                    <div className="min-h-[400px] md:min-h-[500px] p-4 border border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-500 italic transition-all duration-300">
-                      <div className="text-6xl mb-4 float-in">🔒</div>
-                      <p className="text-appear">This note is encrypted. Click unlock to view content.</p>
-                    </div>
-                  ) : (
-                    // Edit mode with rich text editor
-                    <RichTextEditor
-                      content={content}
-                      onChange={setContent}
-                      placeholder="Start writing your note..."
-                      className="min-h-[400px] md:min-h-[500px] focus-border"
-                      onFocus={() => setIsEditing(true)}
-                      onBlur={() => setIsEditing(false)}
-                    />
-                  )}
+                  <div className="transition-all duration-300">
+                    {note?.isEncrypted ? (
+                      // Encrypted state
+                      <div className="min-h-[400px] md:min-h-[500px] p-4 border border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-500 italic transition-all duration-300">
+                        <div className="text-6xl mb-4 float-in">🔒</div>
+                        <p className="text-appear">This note is encrypted. Click unlock to view content.</p>
+                      </div>
+                    ) : !isEditing ? (
+                      // View mode with glossary highlighting
+                      <div 
+                        className={clsx(
+                          "prose prose-sm md:prose-lg max-w-none transition-all duration-300 min-h-[400px] md:min-h-[500px] p-4 border rounded-lg", 
+                          !content ? "flex items-center justify-center text-gray-500 italic" : "",
+                          "border-gray-300 hover:border-blue-300 focus-border bg-gray-50/30",
+                          "slide-up-fade"
+                        )}
+                        onClick={() => setIsEditing(true)}
+                      >
+                        <div className="fade-in">
+                          {content ? (
+                            <GlossaryHighlighter content={content} />
+                          ) : (
+                            <span className="typewriter">Click to start writing your note...</span>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      // Edit mode with rich text editor
+                      <div className="slide-up-fade">
+                        <RichTextEditor
+                          content={content}
+                          onChange={setContent}
+                          placeholder="Start writing your note..."
+                          className="min-h-[400px] md:min-h-[500px] focus-border"
+                          onFocus={() => {}} // Don't automatically switch mode on focus anymore
+                          onBlur={() => {}} // Don't automatically switch mode on blur anymore
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -654,6 +785,20 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           </div>
           
           <div className="flex items-center gap-2 flex-shrink-0">
+            {!note?.isEncrypted && (
+              <span className={clsx(
+                "flex items-center gap-1 scale-fade-in", 
+                isEditing ? "text-blue-500" : "text-green-600"
+              )}>
+                {isEditing ? (
+                  <PencilLine size={12} className="animate-gentle-bounce" />
+                ) : (
+                  <Eye size={12} className="animate-gentle-bounce" />
+                )}
+                <span className="hidden sm:inline">{isEditing ? "Editing" : "Viewing"}</span>
+              </span>
+            )}
+            
             {hasChanges && (
               <span className="text-orange-500 flex items-center gap-1 scale-fade-in">
                 <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
