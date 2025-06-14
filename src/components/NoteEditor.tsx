@@ -221,6 +221,26 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                   )} />
                 </button>
               )}
+
+              {/* Encryption button for mobile */}
+              {note && (
+                <button
+                  onClick={() => setShowEncryptionModal(true)}
+                  className={clsx(
+                    'p-2 rounded-lg transition-all duration-300 mobile-no-tap-highlight button-pop flex items-center gap-1.5',
+                    note.isEncrypted
+                      ? 'text-green-600 bg-green-50 hover:bg-green-100'
+                      : 'text-blue-600 bg-blue-50 hover:bg-blue-100'
+                  )}
+                  aria-label={note.isEncrypted ? "Unlock note" : "Lock note"}
+                >
+                  {note.isEncrypted ? 
+                    <Unlock size={16} className="transition-transform duration-300" /> : 
+                    <Lock size={16} className="transition-transform duration-300" />
+                  }
+                  <span className="text-xs font-medium">{note.isEncrypted ? "Decrypt" : "Encrypt"}</span>
+                </button>
+              )}
               
               {enableAIInsights && !note?.isEncrypted && (
                 <button
@@ -658,6 +678,19 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           note={note}
           onSave={handleEncryptionSuccess}
         />
+      )}
+
+      {/* Mobile Save Button - Only show if there are changes */}
+      {isMobile && note && hasChanges && (
+        <div className="fixed bottom-6 right-6 z-50">
+          <button
+            onClick={handleSave}
+            className="p-4 bg-blue-600 text-white rounded-full shadow-lg transform hover:scale-110 active:scale-95 transition-all duration-300 mobile-no-tap-highlight button-pop"
+            aria-label="Save note"
+          >
+            <Save size={24} className="animate-pulse" />
+          </button>
+        </div>
       )}
     </div>
   );

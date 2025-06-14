@@ -250,7 +250,7 @@ export const EncryptionModal: React.FC<EncryptionModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-fade-in" onClick={() => onClose()}>
       <div 
-        className="bg-white w-full max-w-md rounded-xl shadow-xl border border-gray-200 overflow-hidden scale-fade-in"
+        className="bg-white w-full max-w-md mx-4 rounded-xl shadow-xl border border-gray-200 overflow-hidden scale-fade-in mobile-safe-area"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
