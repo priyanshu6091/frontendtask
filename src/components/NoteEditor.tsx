@@ -16,7 +16,9 @@ import {
   Lock, 
   Unlock,
   Brain,
-  X
+  X,
+  Check,
+  Edit3
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -50,6 +52,8 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   const [showEncryptionModal, setShowEncryptionModal] = useState(false);
   const [isGrammarCheckExpanded, setIsGrammarCheckExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [showInsightTooltip, setShowInsightTooltip] = useState(false);
+  const [showGrammarTooltip, setShowGrammarTooltip] = useState(false);
   
   const editorRef = useRef<HTMLDivElement>(null);
   const lastSavedContentRef = useRef('');
@@ -64,6 +68,30 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       lastSavedTitleRef.current = note.title;
       setHasChanges(false);
       setIsEditing(false); // Start in view mode for existing notes
+      
+      // Show AI insights tooltip for first time users
+      const hasSeenAITooltip = localStorage.getItem('hasSeenAITooltip');
+      if (!hasSeenAITooltip && enableAIInsights && !note.isEncrypted) {
+        setShowInsightTooltip(true);
+        
+        // Auto-hide tooltip after 5 seconds
+        setTimeout(() => {
+          setShowInsightTooltip(false);
+          localStorage.setItem('hasSeenAITooltip', 'true');
+        }, 5000);
+      }
+      
+      // Show Grammar Check tooltip for first time users
+      const hasSeenGrammarTooltip = localStorage.getItem('hasSeenGrammarTooltip');
+      if (!hasSeenGrammarTooltip && enableGrammarCheck && !note.isEncrypted) {
+        setShowGrammarTooltip(true);
+        
+        // Auto-hide tooltip after 5 seconds (after AI insights tooltip)
+        setTimeout(() => {
+          setShowGrammarTooltip(false);
+          localStorage.setItem('hasSeenGrammarTooltip', 'true');
+        }, 6000);
+      }
     } else {
       setTitle('');
       setContent('');
@@ -72,7 +100,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       setHasChanges(false);
       setIsEditing(true); // Start in edit mode for new notes
     }
-  }, [note?.id]);
+  }, [note?.id, enableAIInsights, enableGrammarCheck]);
 
   // Track changes
   useEffect(() => {
@@ -120,7 +148,22 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       setContent('🔒 This note is encrypted. Click unlock to view content.');
     } else if (updatedNoteData.content) {
       setContent(updatedNoteData.content);
+      if (updatedNoteData.title) {
+        setTitle(updatedNoteData.title);
+      }
     }
+    
+    // Update note with encryption changes
+    if (note) {
+      onSave({
+        ...note,
+        ...updatedNoteData,
+        updatedAt: new Date()
+      });
+    }
+    
+    // Hide modal
+    setShowEncryptionModal(false);
   };
 
   const handleGrammarSuggestion = (suggestion: any) => {
@@ -178,9 +221,21 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
               {enableAIInsights && !note?.isEncrypted && (
                 <button
                   onClick={() => setShowAIInsights(true)}
-                  className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                  className={clsx(
+                    "p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors flex items-center gap-1.5",
+                    showInsightTooltip && "pulse-animation"
+                  )}
+                  title="View AI insights and content analysis"
                 >
                   <Brain size={16} />
+                  <span className="text-xs font-medium">AI Insights</span>
+                  
+                  {/* Mobile first-time tooltip */}
+                  {showInsightTooltip && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-purple-800 text-white p-2 rounded-md text-xs text-center">
+                      Get smart analysis of your notes!
+                    </div>
+                  )}
                 </button>
               )}
             </div>
@@ -208,19 +263,37 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
 
               <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                 {enableAIInsights && !note?.isEncrypted && (
-                  <button
-                    onClick={() => setShowAIInsights(!showAIInsights)}
-                    className={clsx(
-                      'p-2 rounded-full sm:rounded-lg transition-colors mobile-no-tap-highlight',
-                      showAIInsights
-                        ? 'bg-purple-100 text-purple-600'
-                        : 'text-gray-600 hover:bg-gray-100 active:bg-gray-200'
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowAIInsights(!showAIInsights)}
+                      className={clsx(
+                        'p-2 sm:px-3 rounded-full sm:rounded-lg transition-colors mobile-no-tap-highlight flex items-center gap-2',
+                        showAIInsights
+                          ? 'bg-purple-100 text-purple-600 border border-purple-200'
+                          : 'text-gray-600 hover:bg-gray-100 active:bg-gray-200 hover:border hover:border-gray-200',
+                        showInsightTooltip && 'pulse-animation'
+                      )}
+                      aria-label={showAIInsights ? "Hide AI insights" : "Show AI insights"}
+                      title={showAIInsights ? "Hide AI insights" : "Show AI insights"}
+                    >
+                      <Brain size={isMobile ? 20 : 18} />
+                      <span className={clsx("hidden sm:inline text-sm font-medium", 
+                        showAIInsights ? "text-purple-700" : "text-gray-700"
+                      )}>
+                        {showAIInsights ? "Hide Insights" : "AI Insights"}
+                      </span>
+                    </button>
+                    
+                    {/* New user tooltip - appears for 5 seconds for first-time users */}
+                    {showInsightTooltip && (
+                      <div className="absolute -bottom-20 right-0 w-64 bg-purple-800 text-white p-3 rounded-lg shadow-lg z-10 animate-fade-in">
+                        <div className="absolute -top-2 right-4 w-4 h-4 bg-purple-800 transform rotate-45"></div>
+                        <p className="text-xs font-medium">
+                          <span className="font-bold">AI Insights</span> analyzes your notes and provides summaries, key themes, and improvement suggestions!
+                        </p>
+                      </div>
                     )}
-                    aria-label={showAIInsights ? "Hide AI insights" : "Show AI insights"}
-                    title={showAIInsights ? "Hide AI insights" : "Show AI insights"}
-                  >
-                    <Brain size={isMobile ? 20 : 18} />
-                  </button>
+                  </div>
                 )}
 
                 {note && (
@@ -228,15 +301,18 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                     <button
                       onClick={() => setShowEncryptionModal(true)}
                       className={clsx(
-                        'p-2 rounded-full sm:rounded-lg transition-colors mobile-no-tap-highlight',
+                        'p-2 sm:px-3 rounded-full sm:rounded-lg transition-colors mobile-no-tap-highlight flex items-center gap-2',
                         note.isEncrypted
-                          ? 'text-green-600 bg-green-50'
-                          : 'text-gray-600 hover:bg-gray-100 active:bg-gray-200'
+                          ? 'text-green-600 bg-green-50 border border-green-200'
+                          : 'text-gray-600 hover:bg-gray-100 active:bg-gray-200 hover:border hover:border-gray-200'
                       )}
                       aria-label={note.isEncrypted ? "Unlock note" : "Lock note"}
                       title={note.isEncrypted ? "Unlock note" : "Lock note"}
                     >
                       {note.isEncrypted ? <Unlock size={isMobile ? 20 : 18} /> : <Lock size={isMobile ? 20 : 18} />}
+                      <span className="hidden sm:inline text-sm font-medium">
+                        {note.isEncrypted ? "Decrypt Note" : "Encrypt Note"}
+                      </span>
                     </button>
 
                     <button
@@ -361,19 +437,62 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
 
             {/* Grammar Check - Expandable Section */}
             {enableGrammarCheck && content && !note?.isEncrypted && (
-              <div className="flex-shrink-0 border-t border-gray-200 bg-gray-50">
-                <button
-                  onClick={() => setIsGrammarCheckExpanded(!isGrammarCheckExpanded)}
-                  className="w-full px-4 py-3 text-left flex items-center justify-between hover:bg-gray-100 transition-colors"
-                >
-                  <span className="font-medium text-gray-700">Grammar Check</span>
-                  <span className="text-gray-500">
-                    {isGrammarCheckExpanded ? '▲' : '▼'}
-                  </span>
-                </button>
+              <div className="flex-shrink-0 border-t border-gray-200 bg-gradient-to-r from-gray-50 to-blue-50/30 relative">
+                <div className="relative">
+                  <button
+                    onClick={() => setIsGrammarCheckExpanded(!isGrammarCheckExpanded)}
+                    className={clsx(
+                      "w-full px-4 py-3 text-left flex items-center justify-between transition-colors",
+                      isGrammarCheckExpanded 
+                        ? "bg-gradient-to-r from-blue-50 to-blue-100/50" 
+                        : "hover:bg-gradient-to-r hover:from-blue-50 hover:to-white",
+                      showGrammarTooltip && "pulse-animation"
+                    )}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className={clsx(
+                        "p-1.5 rounded-lg", 
+                        isGrammarCheckExpanded ? "bg-blue-100" : "bg-blue-50"
+                      )}>
+                        {isGrammarCheckExpanded ? (
+                          <Check size={16} className="text-blue-600" />
+                        ) : (
+                          <Edit3 size={16} className="text-blue-500" />
+                        )}
+                      </div>
+                      <span className={clsx(
+                        "font-medium",
+                        isGrammarCheckExpanded ? "text-blue-800" : "text-gray-700"
+                      )}>Grammar Check</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {isGrammarCheckExpanded ? (
+                        <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">Active</span>
+                      ) : (
+                        <span className="text-xs text-gray-500 hidden sm:inline">Check grammar, spelling & style</span>
+                      )}
+                      <span className={clsx(
+                        "text-sm transition-transform", 
+                        isGrammarCheckExpanded ? "text-blue-600 rotate-180" : "text-gray-500"
+                      )}>
+                        ▼
+                      </span>
+                    </div>
+                  </button>
+                  
+                  {/* First-time user tooltip */}
+                  {showGrammarTooltip && (
+                    <div className="absolute -top-16 left-1/2 transform -translate-x-1/2 w-64 bg-blue-800 text-white p-3 rounded-lg shadow-lg z-10 animate-fade-in">
+                      <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-4 h-4 bg-blue-800 rotate-45"></div>
+                      <p className="text-xs font-medium text-center">
+                        <span className="font-bold">Grammar Check</span> analyzes your writing for grammar, spelling, and style issues!
+                      </p>
+                    </div>
+                  )}
+                </div>
                 
                 {isGrammarCheckExpanded && (
-                  <div className="max-h-48 overflow-y-auto border-t border-gray-200">
+                  <div className="max-h-64 overflow-y-auto border-t border-blue-200 bg-white">
                     <div className="p-4">
                       <div className="max-w-4xl mx-auto">
                         <GrammarCheck 
