@@ -248,224 +248,141 @@ export const EncryptionModal: React.FC<EncryptionModalProps> = ({
   const passwordStrength = password ? calculatePasswordStrength(password) : null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onKeyDown={handleKeyDown}>
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-fade-in" onClick={() => onClose()}>
+      <div 
+        className="bg-white w-full max-w-md rounded-xl shadow-xl border border-gray-200 overflow-hidden scale-fade-in"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <div className="flex items-center gap-3">
-            {isEncrypting ? (
-              <div className="p-2 bg-green-100 rounded-lg">
-                <Lock className="text-green-600" size={24} />
-              </div>
-            ) : (
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Unlock className="text-blue-600" size={24} />
-              </div>
-            )}
-            <div>
-              <h2 className="text-xl font-bold text-gray-900">
-                {isEncrypting ? 'Encrypt Note' : 'Decrypt Note'}
-              </h2>
-              <p className="text-sm text-gray-600">
-                {isEncrypting 
-                  ? 'Secure your note with end-to-end encryption' 
-                  : 'Enter your password to access this note'
-                }
-              </p>
+        <div className="p-4 sm:p-5 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 float-in">
+              {isEncrypting ? (
+                <div className="p-2 bg-blue-100 text-blue-600 rounded-lg transition-all duration-300">
+                  <Lock size={20} className="animate-pulse" />
+                </div>
+              ) : (
+                <div className="p-2 bg-green-100 text-green-600 rounded-lg transition-all duration-300">
+                  <Unlock size={20} className="animate-pulse" />
+                </div>
+              )}
+              <h3 className="text-lg font-semibold text-gray-800 reveal-left">
+                {isEncrypting ? "Encrypt Note" : "Decrypt Note"}
+              </h3>
             </div>
+
+            <button
+              className="p-2 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors button-pop"
+              onClick={onClose}
+              aria-label="Close modal"
+            >
+              <X size={20} />
+            </button>
           </div>
-          
-          <button
-            onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-            disabled={isProcessing}
-          >
-            <X size={20} />
-          </button>
         </div>
-
+        
         {/* Content */}
-        <div className="p-6">
-          {/* Security Notice */}
-          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex items-start gap-3">
-              <Shield size={20} className="text-blue-600 flex-shrink-0 mt-0.5" />
-              <div className="text-sm text-blue-800">
-                <p className="font-medium mb-1">
-                  {isEncrypting ? 'End-to-End Encryption' : 'Secure Decryption'}
-                </p>
-                <p>
-                  {isEncrypting 
-                    ? 'Your note will be encrypted using AES-256-GCM with PBKDF2 key derivation (100,000 iterations). Only you can decrypt it with your password.'
-                    : 'Enter your password to decrypt this note. Your password is never stored or transmitted.'
-                  }
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Error Message */}
+        <div className="p-4 sm:p-6 fade-in">
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <div className="flex items-center gap-2 text-red-700">
-                <XCircle size={16} />
-                <span className="text-sm font-medium">{error}</span>
-              </div>
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg flex items-center gap-2 slide-up-fade">
+              <XCircle size={18} className="text-red-500" />
+              <span className="text-sm">{error}</span>
             </div>
           )}
-
-          {/* Success Message */}
+          
           {success && (
-            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-              <div className="flex items-center gap-2 text-green-700">
-                <CheckCircle size={16} />
-                <span className="text-sm font-medium">{success}</span>
-              </div>
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-600 rounded-lg flex items-center gap-2 slide-up-fade">
+              <CheckCircle size={18} className="text-green-500" />
+              <span className="text-sm">{success}</span>
             </div>
           )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Password Input */}
+          
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            if (isEncrypting) {
+              handleEncrypt();
+            } else {
+              handleDecrypt();
+            }
+          }} className="mb-6 space-y-4 reveal-left">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                {isEncrypting ? 'Create Password' : 'Enter Password'}
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {isEncrypting ? "Create Password" : "Enter Password"}
               </label>
               <div className="relative">
                 <input
                   ref={passwordInputRef}
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-20"
-                  placeholder={isEncrypting ? "Enter a strong password" : "Enter your password"}
-                  required
-                  disabled={isProcessing}
-                  autoComplete={isEncrypting ? "new-password" : "current-password"}
+                  placeholder={isEncrypting ? "Create a strong password" : "Enter your password"}
+                  className="w-full px-4 pl-10 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-300 focus-border"
                 />
-                <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="p-1 text-gray-400 hover:text-gray-600 rounded"
-                    disabled={isProcessing}
-                  >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                  {isEncrypting && (
-                    <button
-                      type="button"
-                      onClick={generatePassword}
-                      className="p-1 text-gray-400 hover:text-gray-600 rounded"
-                      title="Generate secure password"
-                      disabled={isProcessing}
-                    >
-                      <RefreshCw size={16} />
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Password Generator */}
-            {showPasswordGenerator && (
-              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-gray-700">Generated Password:</span>
-                  <button
-                    type="button"
-                    onClick={() => setShowPasswordGenerator(false)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-                <div className="flex items-center gap-2 mb-3">
-                  <code className="flex-1 p-2 bg-white border rounded text-sm font-mono break-all">
-                    {generatedPassword}
-                  </code>
-                  <button
-                    type="button"
-                    onClick={() => copyToClipboard(generatedPassword)}
-                    className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"
-                    title="Copy password"
-                  >
-                    <Copy size={16} />
-                  </button>
+                <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                  <Lock size={16} className="transition-all duration-300 hover:text-blue-500" />
                 </div>
                 <button
                   type="button"
-                  onClick={useGeneratedPassword}
-                  className="w-full px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors button-pop"
+                  onClick={() => setShowPassword(!showPassword)}
                 >
-                  Use This Password
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
-            )}
-
-            {/* Confirm Password (only for encryption) */}
+            </div>
+            
             {isEncrypting && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Confirm Password
-                </label>
-                <div className="relative">
-                  <input
-                    ref={confirmPasswordInputRef}
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-10"
-                    placeholder="Confirm your password"
-                    required
-                    disabled={isProcessing}
-                    autoComplete="new-password"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    disabled={isProcessing}
-                  >
-                    {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Password Strength Indicator (for encryption) */}
-            {isEncrypting && password && passwordStrength && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700">Password Strength:</span>
-                  <span className={clsx(
-                    "text-sm font-medium",
-                    passwordStrength.score <= 2 ? "text-red-600" :
-                    passwordStrength.score <= 4 ? "text-yellow-600" : "text-green-600"
-                  )}>
-                    {passwordStrength.label}
-                  </span>
-                </div>
-                
-                <div className="flex gap-1">
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className={clsx(
-                        "h-2 flex-1 rounded",
-                        i < passwordStrength.score ? passwordStrength.color : "bg-gray-200"
-                      )}
+              <div className="space-y-4 float-in stagger-2">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+                  <div className="relative">
+                    <input
+                      ref={confirmPasswordInputRef}
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Confirm password"
+                      className="w-full px-4 pl-10 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-300 focus-border"
                     />
-                  ))}
+                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                      <Shield size={16} className="transition-all duration-300 hover:text-blue-500" />
+                    </div>
+                    <button
+                      type="button"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors button-pop"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    >
+                      {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                 </div>
 
-                {passwordStrength.feedback.length > 0 && (
-                  <div className="text-xs text-gray-600">
-                    <p className="mb-1">Suggestions:</p>
-                    <ul className="list-disc list-inside space-y-0.5">
-                      {passwordStrength.feedback.map((feedback, index) => (
-                        <li key={index}>{feedback}</li>
-                      ))}
-                    </ul>
+                {/* Password strength meter */}
+                {password && passwordStrength && (
+                  <div className="space-y-1 fade-in">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-medium">Password Strength</span>
+                      <span className={clsx(
+                        "font-medium",
+                        passwordStrength.score < 3 ? "text-red-500" : 
+                        passwordStrength.score < 5 ? "text-yellow-500" : "text-green-500"
+                      )}>
+                        {passwordStrength.label}
+                      </span>
+                    </div>
+                    <div className="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full ${passwordStrength.color} transition-all duration-500 ease-out`}
+                        style={{ width: `${(passwordStrength.score / 6) * 100}%` }}
+                      ></div>
+                    </div>
+                    {passwordStrength.feedback.length > 0 && (
+                      <ul className="text-xs text-gray-600 pl-4 text-appear">
+                        {passwordStrength.feedback.map((item, index) => (
+                          <li key={index} className="list-disc">{item}</li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                 )}
               </div>
