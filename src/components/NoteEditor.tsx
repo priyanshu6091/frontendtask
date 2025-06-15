@@ -273,8 +273,8 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                   {/* First-time user tooltip for mobile that appears when localStorage flag is set */}
                   {localStorage.getItem('hasSeenEditViewTooltip') === 'true' && 
                    localStorage.getItem('hasSeenEditViewTooltipMobile') !== 'true' && (
-                    <div className="absolute -bottom-16 left-0 w-48 bg-blue-800 text-white p-2 rounded-lg shadow-lg z-10 animate-fade-in">
-                      <div className="absolute -top-2 left-4 w-4 h-4 bg-blue-800 transform rotate-45"></div>
+                    <div className="absolute -bottom-20 left-0 w-48 bg-blue-800 text-white p-2 rounded-lg shadow-lg z-10 animate-fade-in">
+                      {/* <div className="absolute -top-2 left-4 w-4 h-4 bg-blue-800 transform rotate-45"></div> */}
                       <p className="text-xs font-medium">
                         New! Switch between view and edit modes
                       </p>
@@ -787,15 +787,10 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           <div className="flex items-center gap-2 flex-shrink-0">
             {!note?.isEncrypted && (
               <span className={clsx(
-                "flex items-center gap-1 scale-fade-in", 
+                "scale-fade-in", 
                 isEditing ? "text-blue-500" : "text-green-600"
               )}>
-                {isEditing ? (
-                  <PencilLine size={12} className="animate-gentle-bounce" />
-                ) : (
-                  <Eye size={12} className="animate-gentle-bounce" />
-                )}
-                <span className="hidden sm:inline">{isEditing ? "Editing" : "Viewing"}</span>
+                <span className="font-medium">{isEditing ? "Editing" : "Viewing"}</span>
               </span>
             )}
             
