@@ -116,8 +116,14 @@
 }
 
 @keyframes backdropFadeIn {
-  from { backdrop-filter: blur(0); background-color: rgba(0,0,0,0); }
-  to { backdrop-filter: blur(4px); background-color: rgba(0,0,0,0.5); }
+  from { 
+    background-color: rgba(0, 0, 0, 0);
+    backdrop-filter: blur(0);
+  }
+  to { 
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+  }
 }
 
 /* Advanced animations for premium feel */
@@ -361,6 +367,44 @@
   animation: typewriter 1.5s steps(30) forwards, blink-cursor 0.75s step-end infinite;
 }
 
+/* Animations for glossary modal */
+@keyframes modalPopIn {
+  0% { transform: scale(0.9); opacity: 0; }
+  70% { transform: scale(1.02); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes pulseLoader {
+  0% { transform: scale(0.8); opacity: 0.3; }
+  50% { transform: scale(1.2); opacity: 0; }
+  100% { transform: scale(0.8); opacity: 0.3; }
+}
+
+@keyframes spin-slow {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 3s linear infinite;
+}
+
+.animate-fade-in-delayed {
+  opacity: 0;
+  animation: fadeIn 0.5s ease-out 0.2s forwards;
+}
+
+.gradient-shift {
+  background-size: 200% 200%;
+  animation: gradientShift 8s ease infinite;
+}
+
 /* Staggered animation utility classes */
 .stagger-1 { animation-delay: 0.1s; }
 .stagger-2 { animation-delay: 0.2s; }
@@ -386,4 +430,17 @@
 
 .hover-underline:hover:after {
   width: 100%;
+}
+
+/* Progress bar animation for indeterminate state */
+@keyframes progressIndeterminate {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(0); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-progress-indeterminate {
+  background: linear-gradient(to right, rgba(59, 130, 246, 0.5), rgba(59, 130, 246, 1), rgba(59, 130, 246, 0.5));
+  width: 50%;
+  animation: progressIndeterminate 1.5s infinite ease-in-out;
 }
