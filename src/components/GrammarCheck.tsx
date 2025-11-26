@@ -32,57 +32,6 @@ export const GrammarCheck: React.FC<GrammarCheckProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [lastCheckedContent, setLastCheckedContent] = useState('');
   
-  // Helper functions for text correction
-  const calculateTextSimilarity = (text1: string, text2: string): number => {
-    // Simple similarity calculation based on length and common characters
-    const longer = text1.length > text2.length ? text1 : text2;
-    const shorter = text1.length > text2.length ? text2 : text1;
-    
-    if (longer.length === 0) {
-      return 1.0;
-    }
-    
-    // Count character matches
-    let matches = 0;
-    for (let i = 0; i < shorter.length; i++) {
-      if (longer.includes(shorter[i])) {
-        matches++;
-      }
-    }
-    
-    return matches / longer.length;
-  };
-  
-  const splitIntoSentences = (text: string): string[] => {
-    // Split text into sentences
-    const rawSentences = text.split(/[.!?]+/);
-    return rawSentences
-      .map(s => s.trim())
-      .filter(s => s.length > 0)
-      .map(s => s.charAt(0).toUpperCase() + s.slice(1));
-  };
-  
-  const simplifyText = (text: string): string => {
-    // Remove unnecessary words and phrases
-    const removeWords = [
-      'very', 'extremely', 'really', 'quite', 'rather', 'somewhat', 
-      'fairly', 'slightly', 'just', 'basically', 'actually', 'literally',
-      'definitely', 'certainly', 'absolutely', 'totally', 'completely',
-      'utterly', 'basically', 'essentially', 'fundamentally', 'in order to',
-      'due to the fact that', 'for the purpose of', 'in the event that',
-      'in the process of', 'specific', 'particular', 'multiple', 'various',
-      'several', 'numerous', 'tailored', 'driven'
-    ];
-    
-    let simplified = text;
-    removeWords.forEach(word => {
-      const regex = new RegExp(`\\b${word}\\b\\s*`, 'gi');
-      simplified = simplified.replace(regex, '');
-    });
-    
-    return simplified;
-  };
-  
   const breakUpLongText = (text: string): string => {
     // Break up a long text into multiple sentences
     const words = text.split(' ');
@@ -133,27 +82,6 @@ export const GrammarCheck: React.FC<GrammarCheckProps> = ({
         return segment;
       })
       .join(' ');
-  };
-  
-  const cleanUpText = (text: string): string => {
-    // Fix formatting issues in shorter text
-    let cleaned = text.trim();
-    
-    // Fix capitalization
-    cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
-    
-    // Fix spacing after punctuation
-    cleaned = cleaned.replace(/([.!?,:;])(\w)/g, '$1 $2');
-    
-    // Fix double spaces
-    cleaned = cleaned.replace(/\s+/g, ' ');
-    
-    // Ensure proper ending
-    if (!cleaned.endsWith('.') && !cleaned.endsWith('!') && !cleaned.endsWith('?')) {
-      cleaned += '.';
-    }
-    
-    return cleaned;
   };
   
   // Function to generate actual corrected sentences based on explanations

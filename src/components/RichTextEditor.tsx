@@ -37,7 +37,6 @@ export const RichTextEditor: React.FC<RichTextEditorProps> = ({
     alignment: 'left'
   });
   const [isFocused, setIsFocused] = useState(false);
-  const [showToolbar, setShowToolbar] = useState(true);
   const [toolbarHidden, setToolbarHidden] = useState(false);
   const lastScrollY = useRef(0);
 

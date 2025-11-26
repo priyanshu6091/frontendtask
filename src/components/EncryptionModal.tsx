@@ -10,7 +10,6 @@ import {
   X, 
   CheckCircle,
   XCircle,
-  Copy,
   RefreshCw,
   Info
 } from 'lucide-react';
@@ -41,8 +40,6 @@ export const EncryptionModal: React.FC<EncryptionModalProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [showPasswordGenerator, setShowPasswordGenerator] = useState(false);
-  const [generatedPassword, setGeneratedPassword] = useState('');
   const passwordInputRef = useRef<HTMLInputElement>(null);
   const confirmPasswordInputRef = useRef<HTMLInputElement>(null);
   
@@ -95,32 +92,6 @@ export const EncryptionModal: React.FC<EncryptionModalProps> = ({
       color: colors[score] || colors[0],
       label: labels[score] || labels[0]
     };
-  };
-
-  const generatePassword = () => {
-    const newPassword = encryptionService.generateSecurePassword(16);
-    setGeneratedPassword(newPassword);
-    setShowPasswordGenerator(true);
-  };
-
-  const useGeneratedPassword = () => {
-    setPassword(generatedPassword);
-    setConfirmPassword(generatedPassword);
-    setShowPasswordGenerator(false);
-    setGeneratedPassword('');
-    if (confirmPasswordInputRef.current) {
-      confirmPasswordInputRef.current.focus();
-    }
-  };
-
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setSuccess('Password copied to clipboard!');
-      setTimeout(() => setSuccess(null), 3000);
-    } catch (err) {
-      setError('Failed to copy password');
-    }
   };
 
   const validateForm = (): boolean => {
@@ -227,21 +198,6 @@ export const EncryptionModal: React.FC<EncryptionModalProps> = ({
       console.error('Decryption error:', err);
     } finally {
       setIsProcessing(false);
-    }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isEncrypting) {
-      handleEncrypt();
-    } else {
-      handleDecrypt();
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      onClose();
     }
   };
 
