@@ -4,6 +4,7 @@ import { useNotes } from './hooks/useNotes';
 import { useUserPreferences } from './hooks/useUserPreferences';
 import { NotesList } from './components/NotesList';
 import { NoteEditor } from './components/NoteEditor';
+import { DeleteConfirmationModal } from './components/DeleteConfirmationModal';
 import { AIService } from './services/aiService';
 import { StickyNote, Sparkles, Menu, X } from 'lucide-react';
 
@@ -22,6 +23,7 @@ function App() {
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -77,11 +79,28 @@ function App() {
     }
   };
 
+  // Handle delete request - shows confirmation modal
   const handleDeleteNote = (id: string) => {
-    deleteNote(id);
-    if (selectedNote?.id === id) {
-      setSelectedNote(null);
+    const noteToDeleteFound = notes.find(n => n.id === id);
+    if (noteToDeleteFound) {
+      setNoteToDelete(noteToDeleteFound);
     }
+  };
+
+  // Confirm deletion after password verification (if encrypted)
+  const confirmDeleteNote = () => {
+    if (noteToDelete) {
+      deleteNote(noteToDelete.id);
+      if (selectedNote?.id === noteToDelete.id) {
+        setSelectedNote(null);
+      }
+      setNoteToDelete(null);
+    }
+  };
+
+  // Cancel deletion
+  const cancelDeleteNote = () => {
+    setNoteToDelete(null);
   };
 
   const handleCloseSidebar = () => {
@@ -234,6 +253,15 @@ function App() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {noteToDelete && (
+        <DeleteConfirmationModal
+          note={noteToDelete}
+          onConfirm={confirmDeleteNote}
+          onCancel={cancelDeleteNote}
+        />
       )}
     </div>
   );
