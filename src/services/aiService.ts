@@ -2,16 +2,23 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // Initialize Gemini client only if API key is available
 let genAI: GoogleGenerativeAI | null = null;
-let model: any = null;
+let model: ReturnType<GoogleGenerativeAI['getGenerativeModel']> | null = null;
 
-if (import.meta.env.VITE_GEMINI_API_KEY) {
-  try {
-    genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
-    model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-  } catch (error) {
-    console.warn('Failed to initialize Gemini client:', error);
+const initializeGemini = () => {
+  if (!genAI && import.meta.env.VITE_GEMINI_API_KEY) {
+    try {
+      genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
+      model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+      console.log('Gemini AI initialized successfully');
+    } catch (error) {
+      console.warn('Failed to initialize Gemini client:', error);
+    }
   }
-}
+  return model;
+};
+
+// Initialize on module load
+initializeGemini();
 
 export interface GrammarError {
   text: string;
@@ -60,15 +67,18 @@ export class AIService {
       return this.termCache.get(term.toLowerCase())!;
     }
 
+    // Ensure model is initialized
+    const aiModel = initializeGemini();
+    
     // Return fallback if Gemini is not available
-    if (!model) {
+    if (!aiModel) {
       return 'AI definitions are not available. Please check your API key configuration.';
     }
 
     try {
       const prompt = `Define the term "${term}" in simple, clear language. Provide a concise definition in 1-2 sentences (max 60 words). If it's a technical term, explain it in an accessible way.`;
 
-      const result = await model.generateContent(prompt);
+      const result = await aiModel.generateContent(prompt);
       const response = await result.response;
       const definition = response.text() || 'Definition not available';
 
@@ -130,7 +140,11 @@ export class AIService {
       return this.insightsCache.get(cacheKey)!;
     }
 
-    if (!model || !content.trim()) {
+    // Ensure model is initialized
+    const aiModel = initializeGemini();
+
+    if (!aiModel || !content.trim()) {
+      console.warn('AI model not available or content empty for insights generation');
       return [];
     }
 
@@ -144,7 +158,7 @@ export class AIService {
 
       // Generate summary
       const summaryPrompt = `Summarize this note in ONE concise sentence (max 100 characters):\n\nTitle: ${title}\n\nContent: ${plainText.slice(0, 500)}`;
-      const summaryResult = await model.generateContent(summaryPrompt);
+      const summaryResult = await aiModel.generateContent(summaryPrompt);
       const summaryResponse = await summaryResult.response;
       const summary = summaryResponse.text();
 
@@ -159,7 +173,7 @@ export class AIService {
 
       // Extract keywords
       const keywordsPrompt = `Extract 3-5 key themes or topics from this note. Return as comma-separated list:\n\n${plainText.slice(0, 500)}`;
-      const keywordsResult = await model.generateContent(keywordsPrompt);
+      const keywordsResult = await aiModel.generateContent(keywordsPrompt);
       const keywordsResponse = await keywordsResult.response;
       const keywords = keywordsResponse.text();
 
@@ -186,7 +200,11 @@ export class AIService {
    * Generate tags for a note using Gemini
    */
   async generateTags(content: string, title: string = ''): Promise<string[]> {
-    if (!model || !content.trim()) {
+    // Ensure model is initialized
+    const aiModel = initializeGemini();
+    
+    if (!aiModel || !content.trim()) {
+      console.warn('AI model not available or content empty for tag generation');
       return [];
     }
 
@@ -198,7 +216,7 @@ export class AIService {
 
       const prompt = `Generate 3-5 specific, actionable tags for this note. Tags should be:\n- Single words or short 2-3 word phrases\n- Lowercase\n- Specific (not generic like 'notes' or 'information')\n- Comma-separated\n\nTitle: ${title}\nContent: ${plainText.slice(0, 400)}\n\nReturn ONLY the tags as a comma-separated list:`;
 
-      const result = await model.generateContent(prompt);
+      const result = await aiModel.generateContent(prompt);
       const response = await result.response;
       const tagsString = response.text().trim();
 
@@ -210,7 +228,7 @@ export class AIService {
         .slice(0, 5);
 
       return tags;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error generating tags:', error);
       return [];
     }
@@ -228,7 +246,11 @@ export class AIService {
       return this.grammarCache.get(cacheKey)!;
     }
 
-    if (!model || plainText.length < 10) {
+    // Ensure model is initialized
+    const aiModel = initializeGemini();
+
+    if (!aiModel || plainText.length < 10) {
+      console.warn('AI model not available or text too short for grammar check');
       return [];
     }
 
@@ -245,7 +267,7 @@ ${plainText}
 
 If no errors, return: NO_ERRORS`;
 
-      const result = await model.generateContent(prompt);
+      const result = await aiModel.generateContent(prompt);
       const response = await result.response;
       const resultText = response.text();
 
@@ -258,7 +280,7 @@ If no errors, return: NO_ERRORS`;
       const errors: GrammarError[] = [];
       const lines = resultText.split('\n').filter(line => line.includes('|'));
 
-      lines.forEach((line, index) => {
+      lines.forEach((line) => {
         const parts = line.split('|').map(p => p.trim());
         if (parts.length >= 3) {
           const [errorText, message, correction] = parts;
@@ -294,7 +316,11 @@ If no errors, return: NO_ERRORS`;
     currentNote: { title: string; content: string },
     allNotes: Array<{ id: string; title: string; content: string }>
   ): Promise<NoteSuggestion[]> {
-    if (!model || !currentNote.content.trim()) {
+    // Ensure model is initialized
+    const aiModel = initializeGemini();
+    
+    if (!aiModel || !currentNote.content.trim()) {
+      console.warn('AI model not available or content empty for note suggestions');
       return [];
     }
 
@@ -308,7 +334,7 @@ If no errors, return: NO_ERRORS`;
 
       const prompt = `Based on this note, suggest 2-3 ways to improve it:\n\nTitle: ${currentNote.title}\nContent: ${plainText.slice(0, 300)}\n\nOther notes: ${otherTitles}\n\nProvide actionable suggestions (one per line):`;
 
-      const result = await model.generateContent(prompt);
+      const result = await aiModel.generateContent(prompt);
       const response = await result.response;
       const suggestions = response.text();
 
@@ -340,5 +366,202 @@ If no errors, return: NO_ERRORS`;
     this.termCache.clear();
     this.insightsCache.clear();
     this.grammarCache.clear();
+  }
+
+  /**
+   * Supported languages for translation
+   */
+  static readonly SUPPORTED_LANGUAGES = [
+    { code: 'en', name: 'English', nativeName: 'English', flag: '🇺🇸' },
+    { code: 'es', name: 'Spanish', nativeName: 'Español', flag: '🇪🇸' },
+    { code: 'fr', name: 'French', nativeName: 'Français', flag: '🇫🇷' },
+    { code: 'de', name: 'German', nativeName: 'Deutsch', flag: '🇩🇪' },
+    { code: 'it', name: 'Italian', nativeName: 'Italiano', flag: '🇮🇹' },
+    { code: 'pt', name: 'Portuguese', nativeName: 'Português', flag: '🇵🇹' },
+    { code: 'ru', name: 'Russian', nativeName: 'Русский', flag: '🇷🇺' },
+    { code: 'zh', name: 'Chinese (Simplified)', nativeName: '简体中文', flag: '🇨🇳' },
+    { code: 'zh-TW', name: 'Chinese (Traditional)', nativeName: '繁體中文', flag: '🇹🇼' },
+    { code: 'ja', name: 'Japanese', nativeName: '日本語', flag: '🇯🇵' },
+    { code: 'ko', name: 'Korean', nativeName: '한국어', flag: '🇰🇷' },
+    { code: 'ar', name: 'Arabic', nativeName: 'العربية', flag: '🇸🇦' },
+    { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी', flag: '🇮🇳' },
+    { code: 'bn', name: 'Bengali', nativeName: 'বাংলা', flag: '🇧🇩' },
+    { code: 'nl', name: 'Dutch', nativeName: 'Nederlands', flag: '🇳🇱' },
+    { code: 'pl', name: 'Polish', nativeName: 'Polski', flag: '🇵🇱' },
+    { code: 'tr', name: 'Turkish', nativeName: 'Türkçe', flag: '🇹🇷' },
+    { code: 'vi', name: 'Vietnamese', nativeName: 'Tiếng Việt', flag: '🇻🇳' },
+    { code: 'th', name: 'Thai', nativeName: 'ไทย', flag: '🇹🇭' },
+    { code: 'sv', name: 'Swedish', nativeName: 'Svenska', flag: '🇸🇪' },
+    { code: 'uk', name: 'Ukrainian', nativeName: 'Українська', flag: '🇺🇦' },
+    { code: 'he', name: 'Hebrew', nativeName: 'עברית', flag: '🇮🇱' },
+    { code: 'id', name: 'Indonesian', nativeName: 'Bahasa Indonesia', flag: '🇮🇩' },
+    { code: 'ms', name: 'Malay', nativeName: 'Bahasa Melayu', flag: '🇲🇾' },
+  ] as const;
+
+  /**
+   * Translate content to a target language using Gemini
+   */
+  async translateContent(
+    content: string,
+    targetLanguage: string,
+    preserveFormatting: boolean = true
+  ): Promise<{ translatedContent: string; detectedSourceLanguage?: string }> {
+    // Ensure model is initialized
+    const aiModel = initializeGemini();
+
+    if (!aiModel) {
+      throw new Error('AI translation is not available. Please check your API key configuration.');
+    }
+
+    if (!content.trim()) {
+      return { translatedContent: '' };
+    }
+
+    try {
+      // Find the target language name
+      const targetLang = AIService.SUPPORTED_LANGUAGES.find(l => l.code === targetLanguage);
+      const targetLangName = targetLang?.name || targetLanguage;
+
+      const plainText = content.replace(/<[^>]*>/g, '').trim();
+      
+      // Build the translation prompt
+      const prompt = preserveFormatting
+        ? `Translate the following text to ${targetLangName}. 
+Preserve the original formatting, paragraph structure, and any bullet points or numbered lists.
+If the text contains technical terms, translate them appropriately while keeping their meaning clear.
+First, briefly identify the source language in brackets like [Source: English], then provide the translation.
+
+Text to translate:
+${plainText}
+
+Provide ONLY the translated text after the source language identification. Do not add any explanations or notes.`
+        : `Translate the following text to ${targetLangName}:
+
+${plainText}
+
+First identify the source language in brackets like [Source: English], then provide only the translated text.`;
+
+      const result = await aiModel.generateContent(prompt);
+      const response = await result.response;
+      const translatedText = response.text().trim();
+
+      // Extract source language if detected
+      let detectedSourceLanguage: string | undefined;
+      let cleanedTranslation = translatedText;
+
+      const sourceMatch = translatedText.match(/\[Source:\s*([^\]]+)\]/i);
+      if (sourceMatch) {
+        detectedSourceLanguage = sourceMatch[1].trim();
+        cleanedTranslation = translatedText.replace(/\[Source:\s*[^\]]+\]\s*/i, '').trim();
+      }
+
+      return {
+        translatedContent: cleanedTranslation,
+        detectedSourceLanguage
+      };
+    } catch (error: unknown) {
+      console.error('Error translating content:', error);
+      
+      if (error instanceof Error) {
+        if (error.message?.includes('API key')) {
+          throw new Error('API access denied. Please check your API key permissions.');
+        } else if (error.message?.includes('429')) {
+          throw new Error('Rate limit exceeded. Please try again later.');
+        }
+      }
+      
+      throw new Error('Unable to translate content at this time. Please try again.');
+    }
+  }
+
+  /**
+   * Detect the language of the content
+   */
+  async detectLanguage(content: string): Promise<string> {
+    const aiModel = initializeGemini();
+
+    if (!aiModel || !content.trim()) {
+      return 'unknown';
+    }
+
+    try {
+      const plainText = content.replace(/<[^>]*>/g, '').trim().slice(0, 500);
+      
+      const prompt = `Identify the language of the following text. Return ONLY the language name in English (e.g., "English", "Spanish", "French", etc.):
+
+${plainText}`;
+
+      const result = await aiModel.generateContent(prompt);
+      const response = await result.response;
+      const detectedLanguage = response.text().trim();
+
+      return detectedLanguage;
+    } catch (error) {
+      console.error('Error detecting language:', error);
+      return 'unknown';
+    }
+  }
+
+  /**
+   * Generate a title for a note based on its content using Gemini
+   */
+  async generateTitle(content: string): Promise<string> {
+    // Ensure model is initialized
+    const aiModel = initializeGemini();
+
+    if (!aiModel) {
+      return 'Untitled Note';
+    }
+
+    if (!content.trim()) {
+      return 'Untitled Note';
+    }
+
+    try {
+      const plainText = content.replace(/<[^>]*>/g, '').trim();
+      
+      // Need at least some content to generate a meaningful title
+      if (plainText.length < 10) {
+        return 'Untitled Note';
+      }
+
+      const prompt = `Generate a concise, descriptive title for this note content. The title should be:
+- 3-7 words maximum
+- Descriptive of the main topic or theme
+- Professional and clear
+- NOT include quotes or special characters
+- NOT be generic like "Note" or "Untitled"
+
+Content:
+${plainText.slice(0, 500)}
+
+Return ONLY the title, nothing else:`;
+
+      const result = await aiModel.generateContent(prompt);
+      const response = await result.response;
+      let title = response.text().trim();
+
+      // Clean up the title
+      title = title
+        .replace(/^["']|["']$/g, '') // Remove surrounding quotes
+        .replace(/^Title:\s*/i, '') // Remove "Title:" prefix if present
+        .replace(/\*+/g, '') // Remove asterisks
+        .trim();
+
+      // Ensure title is not too long
+      if (title.length > 60) {
+        title = title.slice(0, 57) + '...';
+      }
+
+      // Fallback if title is empty or too short
+      if (!title || title.length < 2) {
+        return 'Untitled Note';
+      }
+
+      return title;
+    } catch (error) {
+      console.error('Error generating title:', error);
+      return 'Untitled Note';
+    }
   }
 }

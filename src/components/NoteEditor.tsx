@@ -6,6 +6,7 @@ import { AIInsights } from './AIInsights';
 import { GrammarCheck } from './GrammarCheck';
 import { EncryptionModal } from './EncryptionModal';
 import { TagSuggestions } from './TagSuggestions';
+import { TranslationModal } from './TranslationModal';
 import { AIService } from '../services/aiService';
 import { useTouchGestures } from '../hooks/useTouchGestures';
 import {
@@ -21,7 +22,10 @@ import {
   Check,
   Edit3,
   Eye,
-  PencilLine
+  PencilLine,
+  Languages,
+  Wand2,
+  Loader2
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -54,10 +58,12 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   const [hasChanges, setHasChanges] = useState(false);
   const [showAIInsights, setShowAIInsights] = useState(false);
   const [showEncryptionModal, setShowEncryptionModal] = useState(false);
+  const [showTranslationModal, setShowTranslationModal] = useState(false);
   const [isGrammarCheckExpanded, setIsGrammarCheckExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [showInsightTooltip, setShowInsightTooltip] = useState(false);
   const [showGrammarTooltip, setShowGrammarTooltip] = useState(false);
+  const [isGeneratingTitle, setIsGeneratingTitle] = useState(false);
 
   const editorRef = useRef<HTMLDivElement>(null);
   const lastSavedContentRef = useRef('');
@@ -147,6 +153,25 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
     onSwipeRight: isMobile ? onClose : undefined,
     onLongPress: isMobile && enableAIInsights ? () => setShowAIInsights(true) : undefined,
   });
+
+  // Generate AI title for the note
+  const handleGenerateTitle = async () => {
+    if (!content.trim() || isGeneratingTitle) return;
+
+    setIsGeneratingTitle(true);
+    try {
+      const aiService = AIService.getInstance();
+      const generatedTitle = await aiService.generateTitle(content);
+      if (generatedTitle && generatedTitle !== 'Untitled Note') {
+        setTitle(generatedTitle);
+        setHasChanges(true);
+      }
+    } catch (error) {
+      console.error('Error generating title:', error);
+    } finally {
+      setIsGeneratingTitle(false);
+    }
+  };
 
   const handleSave = () => {
     if (!title.trim() && !content.trim()) return;
@@ -313,6 +338,18 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                 </button>
               )}
 
+              {/* Translation Button - Mobile */}
+              {!note?.isEncrypted && content && (
+                <button
+                  onClick={() => setShowTranslationModal(true)}
+                  className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-300 flex items-center gap-1.5 button-pop"
+                  title="Translate note"
+                >
+                  <Languages size={16} className="transition-transform duration-300" />
+                  <span className="text-xs font-medium">Translate</span>
+                </button>
+              )}
+
               {enableAIInsights && !note?.isEncrypted && (
                 <button
                   onClick={() => setShowAIInsights(true)}
@@ -347,13 +384,42 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                   <ArrowLeft size={20} />
                 </button>
 
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Untitled Note"
-                  className="text-2xl font-bold bg-transparent border-none outline-none flex-1 min-w-0 focus-border"
-                />
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Untitled Note"
+                    className="text-2xl font-bold bg-transparent border-none outline-none flex-1 min-w-0 focus-border"
+                  />
+                  
+                  {/* AI Title Generation Button - Desktop */}
+                  {(!title || title === 'Untitled Note' || title.trim() === '') && content && content.trim().length > 10 && !note?.isEncrypted && (
+                    <button
+                      onClick={handleGenerateTitle}
+                      disabled={isGeneratingTitle}
+                      className={clsx(
+                        'p-2 rounded-lg transition-all duration-300 flex items-center gap-1.5 text-sm font-medium whitespace-nowrap',
+                        isGeneratingTitle
+                          ? 'bg-purple-100 text-purple-600 cursor-wait'
+                          : 'bg-purple-50 text-purple-600 hover:bg-purple-100 border border-purple-200 hover:border-purple-300'
+                      )}
+                      title="Generate title with AI"
+                    >
+                      {isGeneratingTitle ? (
+                        <>
+                          <Loader2 size={16} className="animate-spin" />
+                          <span className="hidden lg:inline">Generating...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Wand2 size={16} />
+                          <span className="hidden lg:inline">Generate Title</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0 slide-up-fade">
@@ -442,6 +508,19 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                       </div>
                     )}
                   </div>
+                )}
+
+                {/* Translation Button - Desktop */}
+                {!note?.isEncrypted && content && (
+                  <button
+                    onClick={() => setShowTranslationModal(true)}
+                    className="p-2 sm:px-3 rounded-full sm:rounded-lg transition-all duration-300 mobile-no-tap-highlight flex items-center gap-2 button-pop text-gray-600 hover:bg-blue-50 hover:text-blue-600 active:bg-blue-100 hover:border hover:border-blue-200"
+                    aria-label="Translate note"
+                    title="Translate note to another language"
+                  >
+                    <Languages size={isMobile ? 20 : 18} className="transition-transform duration-300 hover:scale-110" />
+                    <span className="hidden sm:inline text-sm font-medium">Translate</span>
+                  </button>
                 )}
 
                 {note && (
@@ -542,13 +621,35 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           {/* Mobile Title Input */}
           {isMobile && (
             <div className="px-4 py-3 border-b border-gray-200 float-in">
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Note title..."
-                className="w-full text-xl font-semibold bg-transparent border-none outline-none focus-border"
-              />
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Note title..."
+                  className="flex-1 text-xl font-semibold bg-transparent border-none outline-none focus-border"
+                />
+                {/* AI Title Generation Button - Mobile */}
+                {(!title || title === 'Untitled Note' || title.trim() === '') && content && content.trim().length > 10 && !note?.isEncrypted && (
+                  <button
+                    onClick={handleGenerateTitle}
+                    disabled={isGeneratingTitle}
+                    className={clsx(
+                      'p-2 rounded-lg transition-all duration-300 flex items-center gap-1',
+                      isGeneratingTitle
+                        ? 'bg-purple-100 text-purple-600 cursor-wait'
+                        : 'bg-purple-50 text-purple-600 hover:bg-purple-100 border border-purple-200'
+                    )}
+                    title="Generate title with AI"
+                  >
+                    {isGeneratingTitle ? (
+                      <Loader2 size={16} className="animate-spin" />
+                    ) : (
+                      <Wand2 size={16} />
+                    )}
+                  </button>
+                )}
+              </div>
             </div>
           )}
           {/* Content Area - Smart Inline Editor */}
@@ -848,6 +949,20 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           onClose={() => setShowEncryptionModal(false)}
           note={note}
           onSave={handleEncryptionSuccess}
+        />
+      )}
+
+      {/* Translation Modal */}
+      {showTranslationModal && (
+        <TranslationModal
+          isOpen={showTranslationModal}
+          onClose={() => setShowTranslationModal(false)}
+          content={content}
+          title={title}
+          onReplaceContent={(newContent) => {
+            setContent(newContent);
+            setHasChanges(true);
+          }}
         />
       )}
 
