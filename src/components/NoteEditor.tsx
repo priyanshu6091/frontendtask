@@ -165,15 +165,23 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
     setHasChanges(titleChanged || contentChanged);
   }, [title, content]);
 
-  // Auto-save with debouncing
+  // Auto-save with debouncing - includes title generation for untitled notes
   useEffect(() => {
     if (hasChanges) {
       const timeoutId = setTimeout(() => {
-        handleSave();
+        handleSaveWithTitleGeneration();
       }, 2000);
       return () => clearTimeout(timeoutId);
     }
   }, [hasChanges, title, content]);
+
+  // Generate title when switching away from an untitled note
+  useEffect(() => {
+    return () => {
+      // Cleanup - this runs when note changes or component unmounts
+      // We handle title generation in handleSaveWithTitleGeneration instead
+    };
+  }, [note?.id]);
 
   // Touch gestures for mobile
   const { onTouchStart, onTouchMove, onTouchEnd } = useTouchGestures({
@@ -181,20 +189,38 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
     onLongPress: isMobile && enableAIInsights ? () => setShowAIInsights(true) : undefined,
   });
 
-  // Auto-generate title and close the note
-  const handleClose = async () => {
-    // Check if we need to auto-generate a title
-    const needsTitle = (!title || title.trim() === '' || title === 'Untitled Note') && 
-                       content && 
-                       content.trim().length > 10 && 
-                       !note?.isEncrypted;
+  // Check if note needs a title
+  const needsTitleGeneration = (): boolean => {
+    const currentTitle = title.trim();
+    const plainContent = content ? content.replace(/<[^>]*>/g, '').trim() : '';
+    const hasContent = plainContent.length > 10;
+    const isUntitled = !currentTitle || currentTitle === '' || currentTitle === 'Untitled Note' || currentTitle.startsWith('🔒 Untitled');
+    const isNotEncrypted = !note?.isEncrypted;
+    const isNotGenerating = !isGeneratingTitle;
+    return isUntitled && hasContent && isNotEncrypted && isNotGenerating;
+  };
 
-    if (needsTitle && !isGeneratingTitle) {
+  // Generate title using AI
+  const generateTitleForNote = async (): Promise<string | null> => {
+    try {
+      const aiService = AIService.getInstance();
+      const generatedTitle = await aiService.generateTitle(content);
+      if (generatedTitle && generatedTitle !== 'Untitled Note') {
+        return generatedTitle;
+      }
+    } catch (error) {
+      console.error('Error generating title:', error);
+    }
+    return null;
+  };
+
+  // Auto-generate title and close the note
+  const handleClose = () => {
+    // Try to generate title in the background, but close immediately
+    if (needsTitleGeneration()) {
       setIsGeneratingTitle(true);
-      try {
-        const aiService = AIService.getInstance();
-        const generatedTitle = await aiService.generateTitle(content);
-        if (generatedTitle && generatedTitle !== 'Untitled Note') {
+      generateTitleForNote().then((generatedTitle) => {
+        if (generatedTitle) {
           // Save with the generated title
           const noteData: Partial<Note> = {
             id: note?.id,
@@ -207,17 +233,50 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           };
           onSave(noteData);
         }
-      } catch (error) {
-        console.error('Error generating title:', error);
-      } finally {
         setIsGeneratingTitle(false);
-      }
+      }).catch(() => {
+        setIsGeneratingTitle(false);
+      });
     }
 
-    // Close the editor
+    // Close the editor immediately
     onClose();
   };
 
+  // Save with automatic title generation for untitled notes
+  const handleSaveWithTitleGeneration = async () => {
+    if (!title.trim() && !content.trim()) return;
+
+    let finalTitle = title || 'Untitled Note';
+
+    // Generate title if needed
+    if (needsTitleGeneration()) {
+      setIsGeneratingTitle(true);
+      const generatedTitle = await generateTitleForNote();
+      if (generatedTitle) {
+        finalTitle = generatedTitle;
+        setTitle(generatedTitle); // Update local state
+      }
+      setIsGeneratingTitle(false);
+    }
+
+    const noteData: Partial<Note> = {
+      id: note?.id,
+      title: finalTitle,
+      content: content,
+      tags: tags,
+      isPinned: note?.isPinned || false,
+      isEncrypted: note?.isEncrypted,
+      encryptionData: note?.encryptionData,
+    };
+
+    onSave(noteData);
+    lastSavedContentRef.current = content;
+    lastSavedTitleRef.current = finalTitle;
+    setHasChanges(false);
+  };
+
+  // Basic save without title generation (for immediate saves)
   const handleSave = () => {
     if (!title.trim() && !content.trim()) return;
 

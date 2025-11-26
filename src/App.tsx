@@ -110,6 +110,7 @@ function App() {
   };
 
   const handleCloseEditor = () => {
+    setSelectedNote(null);
     if (isMobile) {
       setIsSidebarOpen(true);
     }
@@ -147,9 +148,9 @@ function App() {
           </div>
         </div>
 
-        <div className="text-xs text-gray-500 hidden sm:block">
+        {/* <div className="text-xs text-gray-500 hidden sm:block">
           {notes.length} {notes.length === 1 ? 'note' : 'notes'}
-        </div>
+        </div> */}
       </header>
 
       <div className="flex h-[calc(100vh-53px)]">
