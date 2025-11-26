@@ -314,3 +314,54 @@ body {
 .animate-quick-pulse {
   animation: soft-pulse 0.5s ease-in-out 1;
 }
+
+/* ========================================
+   RESIZABLE PANELS
+   ======================================== */
+
+/* Resize handle styles */
+.resize-handle {
+  position: absolute;
+  z-index: 10;
+  transition: background-color 0.15s ease;
+}
+
+.resize-handle-vertical {
+  width: 4px;
+  top: 0;
+  bottom: 0;
+  cursor: col-resize;
+}
+
+.resize-handle-horizontal {
+  height: 4px;
+  left: 0;
+  right: 0;
+  cursor: row-resize;
+}
+
+.resize-handle:hover {
+  background-color: rgba(59, 130, 246, 0.5);
+}
+
+.resize-handle:active,
+.resize-handle.resizing {
+  background-color: rgba(59, 130, 246, 0.8);
+}
+
+/* Disable resize on mobile */
+@media (max-width: 767px) {
+  .resize-handle {
+    display: none !important;
+  }
+}
+
+/* When resizing, prevent text selection */
+.is-resizing {
+  user-select: none;
+  cursor: col-resize;
+}
+
+.is-resizing-vertical {
+  cursor: row-resize;
+}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { Note } from '../types';
 import { RichTextEditor } from './RichTextEditor';
 import { GlossaryHighlighter } from './GlossaryHighlighter';
@@ -9,12 +9,12 @@ import { TagSuggestions } from './TagSuggestions';
 import { TranslationModal } from './TranslationModal';
 import { AIService } from '../services/aiService';
 import { useTouchGestures } from '../hooks/useTouchGestures';
+import { useResizablePanel } from '../hooks/useResizablePanel';
 import {
   Save,
   Pin,
   Trash2,
   ArrowLeft,
-  Sparkles,
   Lock,
   Unlock,
   Brain,
@@ -24,7 +24,9 @@ import {
   Eye,
   PencilLine,
   Languages,
-  Loader2
+  Loader2,
+  GripVertical,
+  GripHorizontal
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -67,6 +69,32 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   const editorRef = useRef<HTMLDivElement>(null);
   const lastSavedContentRef = useRef('');
   const lastSavedTitleRef = useRef('');
+
+  // Resizable AI Insights sidebar (horizontal)
+  const {
+    size: aiSidebarWidth,
+    isResizing: isResizingSidebar,
+    startResize: startSidebarResize,
+  } = useResizablePanel({
+    defaultSize: 380,
+    minSize: 280,
+    maxSize: 600,
+    direction: 'horizontal',
+    storageKey: 'ai-sidebar-width'
+  });
+
+  // Resizable Grammar Check panel (vertical)
+  const {
+    size: grammarPanelHeight,
+    isResizing: isResizingGrammar,
+    startResize: startGrammarResize,
+  } = useResizablePanel({
+    defaultSize: 256,
+    minSize: 150,
+    maxSize: 500,
+    direction: 'vertical',
+    storageKey: 'grammar-panel-height'
+  });
 
   // Initialize note content
   useEffect(() => {
@@ -236,13 +264,6 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
     const newContent = content.replace(suggestion.original, suggestion.suggestion);
     setContent(newContent);
   };
-
-  // AI terms count for status bar
-  const aiTermsCount = useMemo(() => {
-    if (!content || note?.isEncrypted) return 0;
-    const plainText = content.replace(/<[^>]*>/g, '');
-    return AIService.getInstance().identifyKeyTerms(plainText).length;
-  }, [content, note?.isEncrypted]);
 
   return (
     <div
@@ -613,8 +634,8 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       <div className="flex-1 flex overflow-hidden">
         {/* Editor Area */}
         <div className={clsx(
-          'flex flex-col overflow-hidden transition-all duration-500 ease-in-out',
-          showAIInsights && !isMobile ? 'w-2/3' : 'w-full'
+          'flex flex-col overflow-hidden transition-all duration-300 ease-in-out flex-1 min-w-0',
+          isResizingSidebar && 'select-none'
         )}>
           {/* Mobile Title Input */}
           {isMobile && (
@@ -718,9 +739,26 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
               </div>
             </div>
 
-            {/* Grammar Check - Expandable Section */}
+            {/* Grammar Check - Expandable & Resizable Section */}
             {enableGrammarCheck && content && !note?.isEncrypted && (
               <div className="flex-shrink-0 border-t border-gray-200 bg-gradient-to-r from-gray-50 to-blue-50/30 relative slide-up-fade">
+                {/* Resize Handle - Only visible when expanded */}
+                {isGrammarCheckExpanded && (
+                  <div
+                    className={clsx(
+                      "absolute top-0 left-0 right-0 h-1 cursor-row-resize z-10 group",
+                      "hover:bg-blue-400 transition-colors -translate-y-1/2",
+                      isResizingGrammar && "bg-blue-500"
+                    )}
+                    onMouseDown={startGrammarResize}
+                    onTouchStart={startGrammarResize}
+                  >
+                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <GripHorizontal size={16} className="text-blue-600" />
+                    </div>
+                  </div>
+                )}
+
                 <div className="relative">
                   <button
                     onClick={() => setIsGrammarCheckExpanded(!isGrammarCheckExpanded)}
@@ -775,7 +813,10 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                 </div>
 
                 {isGrammarCheckExpanded && (
-                  <div className="max-h-64 overflow-y-auto border-t border-blue-200 bg-white slide-up-fade">
+                  <div 
+                    className="overflow-y-auto border-t border-blue-200 bg-white slide-up-fade"
+                    style={{ height: grammarPanelHeight }}
+                  >
                     <div className="p-4">
                       <div className="max-w-4xl mx-auto">
                         <GrammarCheck
@@ -791,20 +832,40 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           </div>
         </div>
 
-        {/* AI Insights Sidebar - Desktop Only */}
+        {/* AI Insights Sidebar - Desktop Only with Resizable Width */}
         {showAIInsights && !isMobile && note && !note.isEncrypted && (
-          <div className="w-1/3 border-l border-gray-200 bg-gray-50 overflow-hidden slide-in-right">
-            <AIInsights
-              note={{
-                ...note,
-                title: title,
-                content: content
-              }}
-              allNotes={allNotes}
-              isVisible={showAIInsights}
-              onClose={() => setShowAIInsights(false)}
-              isMobile={false}
-            />
+          <div 
+            className="border-l border-gray-200 bg-gray-50 overflow-hidden slide-in-right flex flex-shrink-0 relative"
+            style={{ width: aiSidebarWidth }}
+          >
+            {/* Resize Handle */}
+            <div
+              className={clsx(
+                "absolute left-0 top-0 bottom-0 w-1 cursor-col-resize z-10 group",
+                "hover:bg-blue-400 transition-colors",
+                isResizingSidebar && "bg-blue-500"
+              )}
+              onMouseDown={startSidebarResize}
+              onTouchStart={startSidebarResize}
+            >
+              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <GripVertical size={16} className="text-blue-600" />
+              </div>
+            </div>
+            
+            <div className="flex-1 overflow-hidden">
+              <AIInsights
+                note={{
+                  ...note,
+                  title: title,
+                  content: content
+                }}
+                allNotes={allNotes}
+                isVisible={showAIInsights}
+                onClose={() => setShowAIInsights(false)}
+                isMobile={false}
+              />
+            </div>
           </div>
         )}
       </div>
@@ -872,7 +933,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       )}
 
       {/* Responsive Status Bar */}
-      <div className="flex-shrink-0 px-4 py-2 bg-gray-50 border-t border-gray-200 text-xs text-gray-500 slide-up-fade">
+      {/* <div className="flex-shrink-0 px-4 py-2 bg-gray-50 border-t border-gray-200 text-xs text-gray-500 slide-up-fade">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2 md:gap-4 overflow-hidden">
             <span className="truncate reveal-left stagger-1">
@@ -925,7 +986,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
             )}
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Encryption Modal */}
       {showEncryptionModal && (

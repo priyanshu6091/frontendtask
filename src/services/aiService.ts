@@ -255,53 +255,118 @@ export class AIService {
     }
 
     try {
-      const prompt = `Check this text for grammar, spelling, and style errors. For each error found, provide:
-1. The incorrect text
-2. A clear error message
-3. The corrected version
+      const prompt = `You are a professional writing assistant. Analyze this text for grammar, spelling, style, clarity, and tone issues.
 
-Format each error as: ERROR_TEXT | MESSAGE | CORRECTION
+For each issue found, respond in this EXACT JSON format (array of objects):
+[
+  {
+    "original": "the exact problematic text from the input",
+    "corrected": "the corrected version of that text",
+    "type": "grammar|spelling|style|clarity|tone",
+    "explanation": "brief explanation of why this change improves the text",
+    "severity": "low|medium|high"
+  }
+]
 
-Text to check:
-${plainText}
+Rules:
+- "original" must be an EXACT substring from the input text
+- "corrected" must be the properly fixed version (not instructions)
+- Focus on meaningful improvements, not minor stylistic preferences
+- Limit to 5-8 most important issues
+- If no issues found, return: []
 
-If no errors, return: NO_ERRORS`;
+Text to analyze:
+${plainText.slice(0, 2000)}
+
+Return ONLY valid JSON array, no other text:`;
 
       const result = await aiModel.generateContent(prompt);
       const response = await result.response;
-      const resultText = response.text();
+      let resultText = response.text().trim();
 
-      if (resultText.includes('NO_ERRORS')) {
+      // Clean up the response - remove markdown code blocks if present
+      resultText = resultText.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+
+      // Check for empty result
+      if (resultText === '[]' || !resultText) {
         this.grammarCache.set(cacheKey, []);
         return [];
       }
 
-      // Parse errors
-      const errors: GrammarError[] = [];
-      const lines = resultText.split('\n').filter(line => line.includes('|'));
+      // Parse JSON response
+      let parsedResults: Array<{
+        original: string;
+        corrected: string;
+        type: string;
+        explanation: string;
+        severity: string;
+      }>;
 
-      lines.forEach((line) => {
-        const parts = line.split('|').map(p => p.trim());
-        if (parts.length >= 3) {
-          const [errorText, message, correction] = parts;
-          const offset = plainText.indexOf(errorText);
-
-          if (offset >= 0) {
-            errors.push({
-              text: errorText,
-              message: message,
-              suggestions: [correction],
-              offset: offset,
-              length: errorText.length,
-              type: message.toLowerCase().includes('spell') ? 'spelling' : 'grammar',
-              severity: 'medium',
-              confidence: 80
-            });
+      try {
+        parsedResults = JSON.parse(resultText);
+      } catch {
+        console.warn('Failed to parse grammar check JSON, trying fallback parsing');
+        // Try to extract JSON array from response
+        const jsonMatch = resultText.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          try {
+            parsedResults = JSON.parse(jsonMatch[0]);
+          } catch {
+            console.error('Fallback parsing also failed');
+            return [];
           }
+        } else {
+          return [];
         }
-      });
+      }
 
-      this.grammarCache.set(cacheKey, errors.splice(0, 10)); // Limit to 10 errors
+      if (!Array.isArray(parsedResults)) {
+        return [];
+      }
+
+      // Convert to GrammarError format
+      const errors: GrammarError[] = parsedResults
+        .filter(item => item.original && item.corrected && item.original !== item.corrected)
+        .map((item) => {
+          const offset = plainText.indexOf(item.original);
+          
+          // Determine type
+          let type: 'grammar' | 'spelling' | 'style' | 'clarity' | 'tone' = 'grammar';
+          if (item.type) {
+            const lowerType = item.type.toLowerCase();
+            if (['grammar', 'spelling', 'style', 'clarity', 'tone'].includes(lowerType)) {
+              type = lowerType as typeof type;
+            }
+          }
+
+          // Determine severity
+          let severity: 'low' | 'medium' | 'high' = 'medium';
+          if (item.severity) {
+            const lowerSeverity = item.severity.toLowerCase();
+            if (['low', 'medium', 'high'].includes(lowerSeverity)) {
+              severity = lowerSeverity as typeof severity;
+            }
+          }
+
+          // Calculate confidence based on severity
+          const confidenceMap: Record<string, number> = { high: 95, medium: 85, low: 75 };
+          const confidence = confidenceMap[severity] || 80;
+
+          return {
+            text: item.original,
+            message: item.explanation || `Consider changing to: ${item.corrected}`,
+            suggestions: [item.corrected],
+            offset: offset >= 0 ? offset : 0,
+            length: item.original.length,
+            type,
+            severity,
+            confidence
+          };
+        })
+        .filter(error => error.offset >= 0) // Only keep errors we can locate in text
+        .slice(0, 10); // Limit to 10 errors
+
+      this.grammarCache.set(cacheKey, errors);
       return errors;
     } catch (error) {
       console.error('Error checking grammar:', error);
