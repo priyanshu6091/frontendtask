@@ -5,15 +5,16 @@ import { GlossaryHighlighter } from './GlossaryHighlighter';
 import { AIInsights } from './AIInsights';
 import { GrammarCheck } from './GrammarCheck';
 import { EncryptionModal } from './EncryptionModal';
+import { TagSuggestions } from './TagSuggestions';
 import { AIService } from '../services/aiService';
 import { useTouchGestures } from '../hooks/useTouchGestures';
-import { 
-  Save, 
-  Pin, 
-  Trash2, 
-  ArrowLeft, 
-  Sparkles, 
-  Lock, 
+import {
+  Save,
+  Pin,
+  Trash2,
+  ArrowLeft,
+  Sparkles,
+  Lock,
   Unlock,
   Brain,
   X,
@@ -49,6 +50,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
 }) => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
   const [hasChanges, setHasChanges] = useState(false);
   const [showAIInsights, setShowAIInsights] = useState(false);
   const [showEncryptionModal, setShowEncryptionModal] = useState(false);
@@ -56,7 +58,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [showInsightTooltip, setShowInsightTooltip] = useState(false);
   const [showGrammarTooltip, setShowGrammarTooltip] = useState(false);
-  
+
   const editorRef = useRef<HTMLDivElement>(null);
   const lastSavedContentRef = useRef('');
   const lastSavedTitleRef = useRef('');
@@ -66,38 +68,39 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
     if (note) {
       setTitle(note.title);
       setContent(note.isEncrypted ? '🔒 This note is encrypted. Click unlock to view content.' : note.content);
+      setTags(note.tags || []);
       lastSavedContentRef.current = note.content;
       lastSavedTitleRef.current = note.title;
       setHasChanges(false);
-      
+
       // New notes with content start in view mode, empty notes start in edit mode
       const hasContent = note.content && note.content.trim().length > 0;
       setIsEditing(!hasContent || note.isEncrypted || false);
-      
+
       // Show AI insights tooltip for first time users
       const hasSeenAITooltip = localStorage.getItem('hasSeenAITooltip');
       if (!hasSeenAITooltip && enableAIInsights && !note.isEncrypted) {
         setShowInsightTooltip(true);
-        
+
         // Auto-hide tooltip after 5 seconds
         setTimeout(() => {
           setShowInsightTooltip(false);
           localStorage.setItem('hasSeenAITooltip', 'true');
         }, 5000);
       }
-      
+
       // Show Grammar Check tooltip for first time users
       const hasSeenGrammarTooltip = localStorage.getItem('hasSeenGrammarTooltip');
       if (!hasSeenGrammarTooltip && enableGrammarCheck && !note.isEncrypted) {
         setShowGrammarTooltip(true);
-        
+
         // Auto-hide tooltip after 5 seconds (after AI insights tooltip)
         setTimeout(() => {
           setShowGrammarTooltip(false);
           localStorage.setItem('hasSeenGrammarTooltip', 'true');
         }, 6000);
       }
-      
+
       // Show edit/view mode tooltip for first time users
       const hasSeenEditViewTooltip = localStorage.getItem('hasSeenEditViewTooltip');
       if (!hasSeenEditViewTooltip && !note.isEncrypted && hasContent) {
@@ -152,6 +155,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       id: note?.id,
       title: title || 'Untitled Note',
       content: content,
+      tags: tags,
       isPinned: note?.isPinned || false,
       isEncrypted: note?.isEncrypted,
       encryptionData: note?.encryptionData,
@@ -172,7 +176,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
         setTitle(updatedNoteData.title);
       }
     }
-    
+
     // Update note with encryption changes
     if (note) {
       onSave({
@@ -181,7 +185,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
         updatedAt: new Date()
       });
     }
-    
+
     // Hide modal
     setShowEncryptionModal(false);
   };
@@ -199,7 +203,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   }, [content, note?.isEncrypted]);
 
   return (
-    <div 
+    <div
       className="h-full flex flex-col bg-white"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
@@ -209,36 +213,32 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       <div className="flex-shrink-0 bg-white border-b border-gray-200">
         {isMobile ? (
           // Mobile Header
-          <div className="flex items-center justify-between p-3 bg-white border-b border-gray-200 shadow-sm sticky top-0 z-10 float-in">
+          <div className="flex items-center justify-between p-3 bg-white border-b border-gray-200">
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 active:bg-gray-200 rounded-full transition-all duration-300 mobile-no-tap-highlight button-pop"
+              className="p-1.5 hover:bg-gray-100 rounded transition-colors mobile-no-tap-highlight"
               aria-label="Back to notes"
             >
-              <ArrowLeft size={20} />
+              <ArrowLeft size={18} />
             </button>
-            
+
             <h1 className="font-semibold text-gray-800 truncate flex-1 mx-3 reveal-left">
               {title || 'Untitled Note'}
             </h1>
-            
+
             <div className="flex items-center gap-1 slide-up-fade stagger-2">
               {note && (
                 <button
                   onClick={() => onPin(note.id)}
                   className={clsx(
-                    'p-2 rounded-full transition-all duration-300 mobile-no-tap-highlight button-pop',
+                    'p-1.5 rounded transition-colors mobile-no-tap-highlight',
                     note.isPinned
-                      ? 'text-yellow-600 bg-yellow-50'
-                      : 'text-gray-400 hover:bg-gray-100 active:bg-gray-200'
+                      ? 'text-gray-900'
+                      : 'text-gray-500 hover:bg-gray-100'
                   )}
                   aria-label={note.isPinned ? "Unpin note" : "Pin note"}
                 >
-                  <Pin size={18} className={clsx(
-                    note.isPinned ? 'fill-current' : '',
-                    'transition-transform duration-300',
-                    !note.isPinned && 'group-hover:rotate-12'
-                  )} />
+                  <Pin size={16} className={note.isPinned ? 'fill-current' : ''} strokeWidth={1.5} />
                 </button>
               )}
 
@@ -249,8 +249,8 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                     onClick={() => setIsEditing(false)}
                     className={clsx(
                       'px-2 py-1 flex items-center gap-1 text-xs transition-all duration-300',
-                      !isEditing 
-                        ? 'bg-blue-50 text-blue-600 font-medium shadow-inner' 
+                      !isEditing
+                        ? 'bg-blue-50 text-blue-600 font-medium shadow-inner'
                         : 'bg-white text-gray-600 hover:bg-gray-50'
                     )}
                   >
@@ -261,38 +261,38 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                     onClick={() => setIsEditing(true)}
                     className={clsx(
                       'px-2 py-1 flex items-center gap-1 text-xs transition-all duration-300',
-                      isEditing 
-                        ? 'bg-blue-50 text-blue-600 font-medium shadow-inner' 
+                      isEditing
+                        ? 'bg-blue-50 text-blue-600 font-medium shadow-inner'
                         : 'bg-white text-gray-600 hover:bg-gray-50'
                     )}
                   >
                     <PencilLine size={14} className={isEditing ? 'animate-quick-pulse' : ''} />
                     <span>Edit</span>
                   </button>
-                  
+
                   {/* First-time user tooltip for mobile that appears when localStorage flag is set */}
-                  {localStorage.getItem('hasSeenEditViewTooltip') === 'true' && 
-                   localStorage.getItem('hasSeenEditViewTooltipMobile') !== 'true' && (
-                    <div className="absolute -bottom-20 left-0 w-48 bg-blue-800 text-white p-2 rounded-lg shadow-lg z-10 animate-fade-in">
-                      {/* <div className="absolute -top-2 left-4 w-4 h-4 bg-blue-800 transform rotate-45"></div> */}
-                      <p className="text-xs font-medium">
-                        New! Switch between view and edit modes
-                      </p>
-                      <button 
-                        onClick={() => {
-                          localStorage.setItem('hasSeenEditViewTooltipMobile', 'true');
-                          // Force re-render by updating state
-                          setHasChanges(prev => prev);
-                        }}
-                        className="mt-1 px-2 py-0.5 bg-white text-blue-800 rounded text-xs font-medium"
-                      >
-                        Got it
-                      </button>
-                    </div>
-                  )}
+                  {localStorage.getItem('hasSeenEditViewTooltip') === 'true' &&
+                    localStorage.getItem('hasSeenEditViewTooltipMobile') !== 'true' && (
+                      <div className="absolute -bottom-20 left-0 w-48 bg-blue-800 text-white p-2 rounded-lg shadow-lg z-10 animate-fade-in">
+                        {/* <div className="absolute -top-2 left-4 w-4 h-4 bg-blue-800 transform rotate-45"></div> */}
+                        <p className="text-xs font-medium">
+                          New! Switch between view and edit modes
+                        </p>
+                        <button
+                          onClick={() => {
+                            localStorage.setItem('hasSeenEditViewTooltipMobile', 'true');
+                            // Force re-render by updating state
+                            setHasChanges(prev => prev);
+                          }}
+                          className="mt-1 px-2 py-0.5 bg-white text-blue-800 rounded text-xs font-medium"
+                        >
+                          Got it
+                        </button>
+                      </div>
+                    )}
                 </div>
               )}
-                
+
               {/* Encryption button for mobile */}
               {note && (
                 <button
@@ -305,14 +305,14 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                   )}
                   aria-label={note.isEncrypted ? "Unlock note" : "Lock note"}
                 >
-                  {note.isEncrypted ? 
-                    <Unlock size={16} className="transition-transform duration-300" /> : 
+                  {note.isEncrypted ?
+                    <Unlock size={16} className="transition-transform duration-300" /> :
                     <Lock size={16} className="transition-transform duration-300" />
                   }
                   <span className="text-xs font-medium">{note.isEncrypted ? "Decrypt" : "Encrypt"}</span>
                 </button>
               )}
-              
+
               {enableAIInsights && !note?.isEncrypted && (
                 <button
                   onClick={() => setShowAIInsights(true)}
@@ -324,7 +324,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                 >
                   <Brain size={16} className="transition-transform duration-300 hover:scale-110" />
                   <span className="text-xs font-medium">AI Insights</span>
-                  
+
                   {/* Mobile first-time tooltip */}
                   {showInsightTooltip && (
                     <div className="absolute top-full left-0 right-0 mt-1 bg-purple-800 text-white p-2 rounded-md text-xs text-center slide-up-fade">
@@ -346,7 +346,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                 >
                   <ArrowLeft size={20} />
                 </button>
-                
+
                 <input
                   type="text"
                   value={title}
@@ -364,8 +364,8 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                       onClick={() => setIsEditing(false)}
                       className={clsx(
                         'px-3 py-2 flex items-center gap-1.5 text-sm transition-all duration-300',
-                        !isEditing 
-                          ? 'bg-blue-50 text-blue-600 font-medium shadow-inner' 
+                        !isEditing
+                          ? 'bg-blue-50 text-blue-600 font-medium shadow-inner'
                           : 'bg-white text-gray-600 hover:bg-gray-50'
                       )}
                       title="Switch to view mode (read-only with term highlights)"
@@ -377,8 +377,8 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                       onClick={() => setIsEditing(true)}
                       className={clsx(
                         'px-3 py-2 flex items-center gap-1.5 text-sm transition-all duration-300',
-                        isEditing 
-                          ? 'bg-blue-50 text-blue-600 font-medium shadow-inner' 
+                        isEditing
+                          ? 'bg-blue-50 text-blue-600 font-medium shadow-inner'
                           : 'bg-white text-gray-600 hover:bg-gray-50'
                       )}
                       title="Switch to edit mode (make changes to note)"
@@ -386,27 +386,27 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                       <PencilLine size={16} className={isEditing ? 'animate-quick-pulse' : ''} />
                       <span>Edit</span>
                     </button>
-                    
+
                     {/* First-time user tooltip that appears when localStorage flag is set */}
-                    {localStorage.getItem('hasSeenEditViewTooltip') === 'true' && 
-                     localStorage.getItem('hasSeenEditViewTooltipExtended') !== 'true' && (
-                      <div className="absolute top-full mt-2 right-0 w-64 bg-blue-800 text-white p-3 rounded-lg shadow-lg z-10 animate-fade-in">
-                        <div className="absolute -top-2 right-4 w-4 h-4 bg-blue-800 transform rotate-45"></div>
-                        <p className="text-xs font-medium text-appear">
-                          <span className="font-bold">New!</span> Toggle between <span className="font-bold">View</span> and <span className="font-bold">Edit</span> modes to read or modify your notes.
-                        </p>
-                        <button 
-                          onClick={() => {
-                            localStorage.setItem('hasSeenEditViewTooltipExtended', 'true');
-                            // Force re-render by updating state
-                            setHasChanges(prev => prev);
-                          }}
-                          className="mt-2 px-2 py-1 bg-white text-blue-800 rounded text-xs font-medium hover:bg-blue-50"
-                        >
-                          Got it
-                        </button>
-                      </div>
-                    )}
+                    {localStorage.getItem('hasSeenEditViewTooltip') === 'true' &&
+                      localStorage.getItem('hasSeenEditViewTooltipExtended') !== 'true' && (
+                        <div className="absolute top-full mt-2 right-0 w-64 bg-blue-800 text-white p-3 rounded-lg shadow-lg z-10 animate-fade-in">
+                          <div className="absolute -top-2 right-4 w-4 h-4 bg-blue-800 transform rotate-45"></div>
+                          <p className="text-xs font-medium text-appear">
+                            <span className="font-bold">New!</span> Toggle between <span className="font-bold">View</span> and <span className="font-bold">Edit</span> modes to read or modify your notes.
+                          </p>
+                          <button
+                            onClick={() => {
+                              localStorage.setItem('hasSeenEditViewTooltipExtended', 'true');
+                              // Force re-render by updating state
+                              setHasChanges(prev => prev);
+                            }}
+                            className="mt-2 px-2 py-1 bg-white text-blue-800 rounded text-xs font-medium hover:bg-blue-50"
+                          >
+                            Got it
+                          </button>
+                        </div>
+                      )}
                   </div>
                 )}
 
@@ -425,13 +425,13 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                       title={showAIInsights ? "Hide AI insights" : "Show AI insights"}
                     >
                       <Brain size={isMobile ? 20 : 18} className="transition-transform duration-300 group-hover:rotate-12" />
-                      <span className={clsx("hidden sm:inline text-sm font-medium", 
+                      <span className={clsx("hidden sm:inline text-sm font-medium",
                         showAIInsights ? "text-purple-700" : "text-gray-700"
                       )}>
                         {showAIInsights ? "Hide Insights" : "AI Insights"}
                       </span>
                     </button>
-                    
+
                     {/* New user tooltip - appears for 5 seconds for first-time users */}
                     {showInsightTooltip && (
                       <div className="absolute -bottom-20 right-0 w-64 bg-purple-800 text-white p-3 rounded-lg shadow-lg z-10 animate-fade-in">
@@ -457,8 +457,8 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                       aria-label={note.isEncrypted ? "Unlock note" : "Lock note"}
                       title={note.isEncrypted ? "Unlock note" : "Lock note"}
                     >
-                      {note.isEncrypted ? 
-                        <Unlock size={isMobile ? 20 : 18} className="transition-transform duration-300 hover:rotate-12" /> : 
+                      {note.isEncrypted ?
+                        <Unlock size={isMobile ? 20 : 18} className="transition-transform duration-300 hover:rotate-12" /> :
                         <Lock size={isMobile ? 20 : 18} className="transition-transform duration-300 hover:rotate-12" />
                       }
                       <span className="hidden sm:inline text-sm font-medium">
@@ -477,8 +477,8 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                       aria-label={note.isPinned ? "Unpin note" : "Pin note"}
                       title={note.isPinned ? "Unpin note" : "Pin note"}
                     >
-                      <Pin 
-                        size={isMobile ? 20 : 18} 
+                      <Pin
+                        size={isMobile ? 20 : 18}
                         className={clsx(
                           note.isPinned ? 'fill-current' : '',
                           'transition-transform duration-300',
@@ -503,28 +503,26 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                     onClick={handleSave}
                     disabled={!hasChanges}
                     className={clsx(
-                      'p-2 rounded-full transition-all duration-300 mobile-no-tap-highlight transform',
+                      'px-3 py-1.5 rounded text-xs font-medium transition-colors mobile-no-tap-highlight',
                       hasChanges
-                        ? 'bg-blue-600 text-white active:bg-blue-700 hover:scale-110 active:scale-95'
+                        ? 'bg-gray-900 text-white hover:bg-gray-800'
                         : 'bg-gray-200 text-gray-500'
                     )}
                     aria-label="Save note"
-                    title="Save note"
                   >
-                    <Save size={20} className={clsx(hasChanges && "animate-pulse")} />
+                    Save
                   </button>
                 ) : (
                   <button
                     onClick={handleSave}
                     disabled={!hasChanges}
                     className={clsx(
-                      'px-4 py-2 rounded-lg font-medium transition-all duration-300 flex items-center',
+                      'px-4 py-1.5 rounded text-sm font-medium transition-colors',
                       hasChanges
-                        ? 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md hover:scale-105 active:scale-95'
+                        ? 'bg-gray-900 text-white hover:bg-gray-800'
                         : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                     )}
                   >
-                    <Save size={16} className={clsx("mr-2", hasChanges && "animate-pulse")} />
                     Save
                   </button>
                 )}
@@ -552,7 +550,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                 className="w-full text-xl font-semibold bg-transparent border-none outline-none focus-border"
               />
             </div>
-          )}          
+          )}
           {/* Content Area - Smart Inline Editor */}
           <div className="flex-1 flex flex-col overflow-hidden">
             <div className="flex-1 overflow-y-auto scroll-smooth" style={{ scrollBehavior: 'smooth' }} ref={editorRef}>
@@ -567,23 +565,44 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                       </div>
                     ) : !isEditing ? (
                       // View mode with glossary highlighting
-                      <div 
-                        className={clsx(
-                          "prose prose-sm md:prose-lg max-w-none transition-all duration-300 min-h-[400px] md:min-h-[500px] p-4 border rounded-lg", 
-                          !content ? "flex items-center justify-center text-gray-500 italic" : "",
-                          "border-gray-300 hover:border-blue-300 focus-border bg-gray-50/30",
-                          "slide-up-fade"
-                        )}
-                        onClick={() => setIsEditing(true)}
-                      >
-                        <div className="fade-in">
-                          {content ? (
-                            <GlossaryHighlighter content={content} />
-                          ) : (
-                            <span className="typewriter">Click to start writing your note...</span>
+                      <>
+                        <div
+                          className={clsx(
+                            "prose prose-sm md:prose-lg max-w-none transition-all duration-300 min-h-[400px] md:min-h-[500px] p-4 border rounded-lg",
+                            !content ? "flex items-center justify-center text-gray-500 italic" : "",
+                            "border-gray-300 hover:border-blue-300 focus-border bg-gray-50/30",
+                            "slide-up-fade"
                           )}
+                          onClick={() => setIsEditing(true)}
+                        >
+                          <div className="fade-in">
+                            {content ? (
+                              <GlossaryHighlighter content={content} />
+                            ) : (
+                              <span className="typewriter">Click to start writing your note...</span>
+                            )}
+                          </div>
                         </div>
-                      </div>
+
+                        {/* Display Tags in View Mode - Read Only */}
+                        {tags.length > 0 && (
+                          <div className="mt-4 p-3 bg-white border border-gray-200 rounded-lg">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-sm font-medium text-gray-700">Tags:</span>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              {tags.map((tag, index) => (
+                                <span
+                                  key={index}
+                                  className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium border border-blue-200 shadow-sm"
+                                >
+                                  #{tag}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </>
                     ) : (
                       // Edit mode with rich text editor
                       <div className="slide-up-fade">
@@ -592,9 +611,21 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                           onChange={setContent}
                           placeholder="Start writing your note..."
                           className="min-h-[400px] md:min-h-[500px] focus-border"
-                          onFocus={() => {}} // Don't automatically switch mode on focus anymore
-                          onBlur={() => {}} // Don't automatically switch mode on blur anymore
+                          onFocus={() => { }} // Don't automatically switch mode on focus anymore
+                          onBlur={() => { }} // Don't automatically switch mode on blur anymore
                         />
+
+                        {/* AI Tag Suggestions - Only show in edit mode */}
+                        {!note?.isEncrypted && (
+                          <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                            <TagSuggestions
+                              content={content}
+                              title={title}
+                              currentTags={tags}
+                              onTagsUpdate={setTags}
+                            />
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -610,15 +641,15 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                     onClick={() => setIsGrammarCheckExpanded(!isGrammarCheckExpanded)}
                     className={clsx(
                       "w-full px-4 py-3 text-left flex items-center justify-between transition-all duration-300",
-                      isGrammarCheckExpanded 
-                        ? "bg-gradient-to-r from-blue-50 to-blue-100/50" 
+                      isGrammarCheckExpanded
+                        ? "bg-gradient-to-r from-blue-50 to-blue-100/50"
                         : "hover:bg-gradient-to-r hover:from-blue-50 hover:to-white",
                       showGrammarTooltip && "pulse-animation"
                     )}
                   >
                     <div className="flex items-center gap-2">
                       <div className={clsx(
-                        "p-1.5 rounded-lg transition-all duration-300", 
+                        "p-1.5 rounded-lg transition-all duration-300",
                         isGrammarCheckExpanded ? "bg-blue-100" : "bg-blue-50"
                       )}>
                         {isGrammarCheckExpanded ? (
@@ -639,14 +670,14 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                         <span className="text-xs text-gray-500 hidden sm:inline reveal-right">Check grammar, spelling & style</span>
                       )}
                       <span className={clsx(
-                        "text-sm transition-transform duration-300", 
+                        "text-sm transition-transform duration-300",
                         isGrammarCheckExpanded ? "text-blue-600 rotate-180" : "text-gray-500"
                       )}>
                         ▼
                       </span>
                     </div>
                   </button>
-                  
+
                   {/* First-time user tooltip */}
                   {showGrammarTooltip && (
                     <div className="absolute -top-16 left-1/2 transform -translate-x-1/2 w-64 bg-blue-800 text-white p-3 rounded-lg shadow-lg z-10 animate-fade-in">
@@ -657,12 +688,12 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                     </div>
                   )}
                 </div>
-                
+
                 {isGrammarCheckExpanded && (
                   <div className="max-h-64 overflow-y-auto border-t border-blue-200 bg-white slide-up-fade">
                     <div className="p-4">
                       <div className="max-w-4xl mx-auto">
-                        <GrammarCheck 
+                        <GrammarCheck
                           content={content}
                           onApplySuggestion={handleGrammarSuggestion}
                         />
@@ -691,16 +722,16 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
             />
           </div>
         )}
-      </div>        
-      
+      </div>
+
       {/* Mobile AI Insights Modal with Enhanced Animation */}
       {note && !note.isEncrypted && (
-        <div 
+        <div
           className={`fixed inset-0 z-50 flex items-end md:items-center transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]
             ${showAIInsights && isMobile ? 'opacity-100 visible backdrop-fade-in' : 'opacity-0 invisible pointer-events-none'}
           `}
-        >            
-          <div 
+        >
+          <div
             className={`w-full md:w-96 md:mx-auto bg-white rounded-t-2xl md:rounded-xl max-h-[85vh] md:max-h-[70vh] 
               shadow-xl mobile-safe-area transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] flex flex-col
               ${showAIInsights && isMobile ? 'translate-y-0 slide-in-bottom' : 'translate-y-full'}
@@ -735,7 +766,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                 isMobile={true}
               />
             </div>
-            
+
             {/* Modal Footer with Refresh Button */}
             {!note.isEncrypted && showAIInsights && (
               <div className="p-4 border-t border-gray-200 bg-gradient-to-r from-purple-50 to-blue-50 gradient-shift slide-up-fade">
@@ -783,24 +814,24 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
               </span>
             )}
           </div>
-          
+
           <div className="flex items-center gap-2 flex-shrink-0">
             {!note?.isEncrypted && (
               <span className={clsx(
-                "scale-fade-in", 
+                "scale-fade-in",
                 isEditing ? "text-blue-500" : "text-green-600"
               )}>
                 <span className="font-medium">{isEditing ? "Editing" : "Viewing"}</span>
               </span>
             )}
-            
+
             {hasChanges && (
               <span className="text-orange-500 flex items-center gap-1 scale-fade-in">
                 <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
                 <span className="hidden sm:inline">Unsaved</span>
               </span>
             )}
-            
+
             {showAIInsights && !isMobile && (
               <span className="text-purple-600 flex items-center gap-1 scale-fade-in stagger-1">
                 <Brain size={12} className="animate-gentle-bounce" />

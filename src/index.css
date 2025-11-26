@@ -1,6 +1,38 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
-/* Custom utilities for better text handling */
+/* 
+  Minimal Professional Design System
+  Inspired by: Notion, Linear, Bear, Apple Notes, Craft Docs
+  
+  Core Principles:
+  - Ultra-minimal, calm aesthetics
+  - Neutral color palette
+  - Reduced shadows and gradients
+  - Flat design with subtle depth
+  - 4-6px border radius
+  - Clean typography with ample whitespace
+*/
+
+/* ========================================
+   TYPOGRAPHY
+   ======================================== */
+
+* {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  line-height: 1.6;
+  letter-spacing: -0.011em;
+}
+
+/* ========================================
+   CUSTOM UTILITIES
+   ======================================== */
+
 .line-clamp-3 {
   display: -webkit-box;
   -webkit-line-clamp: 3;
@@ -10,53 +42,49 @@
   text-overflow: ellipsis;
 }
 
-/* Mobile optimizations */
+/* ========================================
+   MOBILE OPTIMIZATIONS
+   ======================================== */
+
 @media (max-width: 767px) {
   .mobile-safe-area {
     padding-bottom: env(safe-area-inset-bottom, 0px);
     padding-top: env(safe-area-inset-top, 20px);
   }
-  
-  .mobile-bottom-nav {
-    padding-bottom: env(safe-area-inset-bottom, 16px);
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-  }
-  
+
   .mobile-swipeable {
     touch-action: pan-y;
     -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
     scroll-behavior: smooth;
     overscroll-behavior-y: contain;
     -webkit-tap-highlight-color: transparent;
-    -ms-overflow-style: none;  /* For IE and Edge */
   }
-  
+
   .mobile-no-tap-highlight {
     -webkit-tap-highlight-color: transparent;
   }
 
-  /* Improved scrolling for all scrollable content */
+  /* Minimal scrollbars */
   ::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
+    width: 3px;
+    height: 3px;
   }
-  
+
   ::-webkit-scrollbar-track {
     background: transparent;
   }
-  
+
   ::-webkit-scrollbar-thumb {
-    background-color: rgba(156, 163, 175, 0.5);
-    border-radius: 20px;
+    background-color: rgba(0, 0, 0, 0.15);
+    border-radius: 4px;
   }
-  
+
   * {
     -webkit-overflow-scrolling: touch;
-    scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+    scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
     scrollbar-width: thin;
   }
-  
+
   .scrollable-container {
     height: 100%;
     overflow-y: auto;
@@ -66,381 +94,223 @@
   }
 }
 
-/* Animations for mobile transitions */
-@keyframes slideInRight {
-  from { transform: translateX(100%); opacity: 0.5; }
-  to { transform: translateX(0); opacity: 1; }
+/* Desktop scrollbars */
+@media (min-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #f5f5f5;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(0, 0, 0, 0.3);
+  }
 }
 
-@keyframes slideOutRight {
-  from { transform: translateX(0); opacity: 1; }
-  to { transform: translateX(100%); opacity: 0.5; }
-}
+/* ========================================
+   MINIMAL ANIMATIONS
+   ======================================== */
 
-@keyframes slideInLeft {
-  from { transform: translateX(-100%); opacity: 0.5; }
-  to { transform: translateX(0); opacity: 1; }
-}
+/* Subtle, purposeful animations only */
 
-@keyframes slideOutLeft {
-  from { transform: translateX(0); opacity: 1; }
-  to { transform: translateX(-100%); opacity: 0.5; }
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideInBottom {
-  from { transform: translateY(100%); opacity: 0.5; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-@keyframes slideOutBottom {
-  from { transform: translateY(0); opacity: 1; }
-  to { transform: translateY(100%); opacity: 0.5; }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes quickPulse {
-  0% { transform: scale(1); }
-  25% { transform: scale(1.15); }
-  50% { transform: scale(1); }
-  75% { transform: scale(1.10); }
-  100% { transform: scale(1); }
-}
-
-@keyframes scaleIn {
-  from { transform: scale(0.95); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
-
-@keyframes backdropFadeIn {
-  from { 
-    background-color: rgba(0, 0, 0, 0);
-    backdrop-filter: blur(0);
+  from {
+    transform: translateY(100%);
+    opacity: 0;
   }
-  to { 
-    background-color: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(4px);
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
   }
 }
 
-/* Advanced animations for premium feel */
-@keyframes floatIn {
-  0% { transform: translateY(8px); opacity: 0; }
-  100% { transform: translateY(0); opacity: 1; }
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
-@keyframes shimmer {
-  0% { background-position: -100% 0; }
-  100% { background-position: 100% 0; }
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
-@keyframes gentle-bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
-}
-
-@keyframes scale-fade {
-  0% { transform: scale(0.97); opacity: 0; }
-  70% { transform: scale(1.02); }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-@keyframes rotate-in {
-  0% { transform: rotateY(-15deg) scale(0.98); opacity: 0; transform-origin: left; }
-  100% { transform: rotateY(0) scale(1); opacity: 1; transform-origin: left; }
-}
-
-@keyframes reveal-left {
-  0% { transform: translateX(-10px); opacity: 0; }
-  100% { transform: translateX(0); opacity: 1; }
-}
-
-@keyframes reveal-right {
-  0% { transform: translateX(10px); opacity: 0; }
-  100% { transform: translateX(0); opacity: 1; }
-}
-
-@keyframes border-grow {
-  from { border-width: 0; opacity: 0; }
-  to { border-width: 1px; opacity: 1; }
-}
-
-@keyframes gradient-shift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-/* Reusable animation classes */
-.float-in {
-  animation: floatIn 0.6s cubic-bezier(0.21, 1.02, 0.73, 1) forwards;
-}
-
-.shimmer-bg {
-  background: linear-gradient(90deg, 
-    rgba(255,255,255,0) 0%, 
-    rgba(255,255,255,0.1) 50%, 
-    rgba(255,255,255,0) 100%);
-  background-size: 200% 100%;
-  animation: shimmer 2.5s infinite;
-}
-
-.hover-float {
-  transition: transform 0.3s ease;
-}
-
-.hover-float:hover {
-  transform: translateY(-2px);
-}
-
-.scale-fade-in {
-  animation: scale-fade 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-}
-
-.rotate-in {
-  animation: rotate-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
-
-.reveal-left {
-  animation: reveal-left 0.4s cubic-bezier(0.21, 1.02, 0.73, 1) forwards;
-}
-
-.reveal-right {
-  animation: reveal-right 0.4s cubic-bezier(0.21, 1.02, 0.73, 1) forwards;
-}
-
-.border-grow {
-  animation: border-grow 0.5s ease forwards;
-}
-
-.gradient-shift {
-  background-size: 200% 200%;
-  animation: gradient-shift 6s ease infinite;
-}
-
-/* Reusable transition classes */
-.slide-in-right {
-  animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.slide-out-right {
-  animation: slideOutRight 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.slide-in-left {
-  animation: slideInLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.slide-out-left {
-  animation: slideOutLeft 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+/* Minimal animation classes */
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out forwards;
 }
 
 .slide-in-bottom {
-  animation: slideInBottom 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: slideInBottom 0.25s ease-out forwards;
 }
 
-.slide-out-bottom {
-  animation: slideOutBottom 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+.slide-in-left {
+  animation: slideInLeft 0.25s ease-out forwards;
 }
 
-.scale-in {
-  animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.4s ease-out forwards;
-}
-
-.backdrop-fade-in {
-  animation: backdropFadeIn 0.35s ease-out forwards;
+.slide-in-right {
+  animation: slideInRight 0.25s ease-out forwards;
 }
 
 /* Transition utilities */
-.transition-transform {
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.transition-opacity {
-  transition: opacity 0.3s ease;
-}
-
 .transition-all-smooth {
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.15s ease;
 }
 
-/* Custom animations */
+.mobile-no-tap-highlight {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Focus states */
+.focus-border:focus-within {
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+/* ========================================
+   BUTTON & INTERACTION STYLES
+   ======================================== */
+
+.button-minimal {
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.button-minimal:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.button-minimal:active {
+  background-color: rgba(0, 0, 0, 0.08);
+}
+
+/* ========================================
+   LAYOUT UTILITIES
+   ======================================== */
+
+.workspace-layout {
+  height: 100vh;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.sidebar-minimal {
+  border-right: 1px solid #e5e5e5;
+  background: #fafafa;
+}
+
+.content-area {
+  background: #ffffff;
+  flex: 1;
+}
+
+/* ========================================
+   STAGGERED ANIMATIONS (SUBTLE)
+   ======================================= =*/
+
+.stagger-1 {
+  animation-delay: 0.05s;
+}
+
+.stagger-2 {
+  animation-delay: 0.1s;
+}
+
+.stagger-3 {
+  animation-delay: 0.15s;
+}
+
+.stagger-4 {
+  animation-delay: 0.2s;
+}
+
+.stagger-5 {
+  animation-delay: 0.25s;
+}
+
+/* ========================================
+   COMPATIBILITY & LEGACY
+   ======================================== */
+
+/* Keep some necessary animations for modals and overlays */
+@keyframes backdropFadeIn {
+  from {
+    background-color: rgba(0, 0, 0, 0);
+  }
+
+  to {
+    background-color: rgba(0, 0, 0, 0.3);
+  }
+}
+
+.backdrop-fade-in {
+  animation: backdropFadeIn 0.2s ease-out forwards;
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.97);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.scale-in {
+  animation: scaleIn 0.2s ease-out forwards;
+}
+
+/* Minimal pulse for important UI elements */
 @keyframes soft-pulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(147, 51, 234, 0.4);
-  }
-  70% {
-    box-shadow: 0 0 0 10px rgba(147, 51, 234, 0);
-  }
+
+  0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(147, 51, 234, 0);
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
   }
 }
 
 .pulse-animation {
-  animation: soft-pulse 2s infinite;
+  animation: soft-pulse 2s ease-in-out infinite;
 }
 
-/* Additional professional animations for better UX */
-@keyframes focus-border {
-  0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
-  100% { box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15); }
-}
-
-@keyframes text-appear {
-  from { opacity: 0; transform: translateY(5px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes highlight-pulse {
-  0% { background-color: rgba(124, 58, 237, 0.1); }
-  50% { background-color: rgba(124, 58, 237, 0.2); }
-  100% { background-color: rgba(124, 58, 237, 0.1); }
-}
-
-@keyframes slide-up-fade {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes typewriter {
-  from { width: 0; }
-  to { width: 100%; }
-}
-
-@keyframes blink-cursor {
-  from, to { border-right-color: transparent; }
-  50% { border-right-color: currentColor; }
-}
-
-@keyframes button-pop {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
-}
-
-/* Reusable animation classes */
-.focus-border {
-  transition: box-shadow 0.3s ease;
-}
-
-.focus-border:focus-within {
-  animation: focus-border 0.4s ease forwards;
-}
-
-.text-appear {
-  animation: text-appear 0.3s ease forwards;
-}
-
-.highlight-pulse {
-  animation: highlight-pulse 2s ease infinite;
-}
-
-.slide-up-fade {
-  animation: slide-up-fade 0.4s ease forwards;
-}
-
-.button-pop {
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.button-pop:hover {
-  transform: scale(1.05);
-}
-
-.button-pop:active {
-  transform: scale(0.95);
-}
-
-.typewriter {
-  overflow: hidden;
-  white-space: nowrap;
-  border-right: 2px solid;
-  width: 0;
-  animation: typewriter 1.5s steps(30) forwards, blink-cursor 0.75s step-end infinite;
-}
-
-/* Animations for glossary modal */
-@keyframes modalPopIn {
-  0% { transform: scale(0.9); opacity: 0; }
-  70% { transform: scale(1.02); opacity: 1; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-@keyframes gradientShift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-@keyframes pulseLoader {
-  0% { transform: scale(0.8); opacity: 0.3; }
-  50% { transform: scale(1.2); opacity: 0; }
-  100% { transform: scale(0.8); opacity: 0.3; }
-}
-
-@keyframes spin-slow {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.animate-spin-slow {
-  animation: spin-slow 3s linear infinite;
-}
-
-.animate-fade-in-delayed {
-  opacity: 0;
-  animation: fadeIn 0.5s ease-out 0.2s forwards;
-}
-
-.gradient-shift {
-  background-size: 200% 200%;
-  animation: gradientShift 8s ease infinite;
-}
-
-/* Staggered animation utility classes */
-.stagger-1 { animation-delay: 0.1s; }
-.stagger-2 { animation-delay: 0.2s; }
-.stagger-3 { animation-delay: 0.3s; }
-.stagger-4 { animation-delay: 0.4s; }
-.stagger-5 { animation-delay: 0.5s; }
-
-/* Hover effect classes */
-.hover-underline {
-  position: relative;
-}
-
-.hover-underline:after {
-  content: '';
-  position: absolute;
-  width: 0;
-  height: 1px;
-  bottom: -1px;
-  left: 0;
-  background-color: currentColor;
-  transition: width 0.3s ease;
-}
-
-.hover-underline:hover:after {
-  width: 100%;
-}
-
-/* Progress bar animation for indeterminate state */
-@keyframes progressIndeterminate {
-  0% { transform: translateX(-100%); }
-  50% { transform: translateX(0); }
-  100% { transform: translateX(100%); }
-}
-
-.animate-progress-indeterminate {
-  background: linear-gradient(to right, rgba(59, 130, 246, 0.5), rgba(59, 130, 246, 1), rgba(59, 130, 246, 0.5));
-  width: 50%;
-  animation: progressIndeterminate 1.5s infinite ease-in-out;
+/* Quick animation for state changes */
+.animate-quick-pulse {
+  animation: soft-pulse 0.5s ease-in-out 1;
 }
