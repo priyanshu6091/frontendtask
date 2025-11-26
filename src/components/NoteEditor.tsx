@@ -24,7 +24,6 @@ import {
   Eye,
   PencilLine,
   Languages,
-  Wand2,
   Loader2
 } from 'lucide-react';
 import { clsx } from 'clsx';
@@ -150,27 +149,45 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
 
   // Touch gestures for mobile
   const { onTouchStart, onTouchMove, onTouchEnd } = useTouchGestures({
-    onSwipeRight: isMobile ? onClose : undefined,
+    onSwipeRight: isMobile ? () => handleClose() : undefined,
     onLongPress: isMobile && enableAIInsights ? () => setShowAIInsights(true) : undefined,
   });
 
-  // Generate AI title for the note
-  const handleGenerateTitle = async () => {
-    if (!content.trim() || isGeneratingTitle) return;
+  // Auto-generate title and close the note
+  const handleClose = async () => {
+    // Check if we need to auto-generate a title
+    const needsTitle = (!title || title.trim() === '' || title === 'Untitled Note') && 
+                       content && 
+                       content.trim().length > 10 && 
+                       !note?.isEncrypted;
 
-    setIsGeneratingTitle(true);
-    try {
-      const aiService = AIService.getInstance();
-      const generatedTitle = await aiService.generateTitle(content);
-      if (generatedTitle && generatedTitle !== 'Untitled Note') {
-        setTitle(generatedTitle);
-        setHasChanges(true);
+    if (needsTitle && !isGeneratingTitle) {
+      setIsGeneratingTitle(true);
+      try {
+        const aiService = AIService.getInstance();
+        const generatedTitle = await aiService.generateTitle(content);
+        if (generatedTitle && generatedTitle !== 'Untitled Note') {
+          // Save with the generated title
+          const noteData: Partial<Note> = {
+            id: note?.id,
+            title: generatedTitle,
+            content: content,
+            tags: tags,
+            isPinned: note?.isPinned || false,
+            isEncrypted: note?.isEncrypted,
+            encryptionData: note?.encryptionData,
+          };
+          onSave(noteData);
+        }
+      } catch (error) {
+        console.error('Error generating title:', error);
+      } finally {
+        setIsGeneratingTitle(false);
       }
-    } catch (error) {
-      console.error('Error generating title:', error);
-    } finally {
-      setIsGeneratingTitle(false);
     }
+
+    // Close the editor
+    onClose();
   };
 
   const handleSave = () => {
@@ -240,7 +257,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           // Mobile Header
           <div className="flex items-center justify-between p-3 bg-white border-b border-gray-200">
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="p-1.5 hover:bg-gray-100 rounded transition-colors mobile-no-tap-highlight"
               aria-label="Back to notes"
             >
@@ -378,7 +395,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4 flex-1 min-w-0">
                 <button
-                  onClick={onClose}
+                  onClick={handleClose}
                   className="p-2 hover:bg-gray-100 rounded-lg transition-all duration-300 button-pop"
                 >
                   <ArrowLeft size={20} />
@@ -389,35 +406,16 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                     type="text"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Untitled Note"
+                    placeholder="Untitled Note (auto-generated on close)"
                     className="text-2xl font-bold bg-transparent border-none outline-none flex-1 min-w-0 focus-border"
                   />
                   
-                  {/* AI Title Generation Button - Desktop */}
-                  {(!title || title === 'Untitled Note' || title.trim() === '') && content && content.trim().length > 10 && !note?.isEncrypted && (
-                    <button
-                      onClick={handleGenerateTitle}
-                      disabled={isGeneratingTitle}
-                      className={clsx(
-                        'p-2 rounded-lg transition-all duration-300 flex items-center gap-1.5 text-sm font-medium whitespace-nowrap',
-                        isGeneratingTitle
-                          ? 'bg-purple-100 text-purple-600 cursor-wait'
-                          : 'bg-purple-50 text-purple-600 hover:bg-purple-100 border border-purple-200 hover:border-purple-300'
-                      )}
-                      title="Generate title with AI"
-                    >
-                      {isGeneratingTitle ? (
-                        <>
-                          <Loader2 size={16} className="animate-spin" />
-                          <span className="hidden lg:inline">Generating...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Wand2 size={16} />
-                          <span className="hidden lg:inline">Generate Title</span>
-                        </>
-                      )}
-                    </button>
+                  {/* Auto-generating indicator */}
+                  {isGeneratingTitle && (
+                    <div className="flex items-center gap-1.5 text-sm text-purple-600">
+                      <Loader2 size={16} className="animate-spin" />
+                      <span className="hidden lg:inline">Generating title...</span>
+                    </div>
                   )}
                 </div>
               </div>
@@ -626,28 +624,14 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Note title..."
+                  placeholder="Note title (auto-generated)..."
                   className="flex-1 text-xl font-semibold bg-transparent border-none outline-none focus-border"
                 />
-                {/* AI Title Generation Button - Mobile */}
-                {(!title || title === 'Untitled Note' || title.trim() === '') && content && content.trim().length > 10 && !note?.isEncrypted && (
-                  <button
-                    onClick={handleGenerateTitle}
-                    disabled={isGeneratingTitle}
-                    className={clsx(
-                      'p-2 rounded-lg transition-all duration-300 flex items-center gap-1',
-                      isGeneratingTitle
-                        ? 'bg-purple-100 text-purple-600 cursor-wait'
-                        : 'bg-purple-50 text-purple-600 hover:bg-purple-100 border border-purple-200'
-                    )}
-                    title="Generate title with AI"
-                  >
-                    {isGeneratingTitle ? (
-                      <Loader2 size={16} className="animate-spin" />
-                    ) : (
-                      <Wand2 size={16} />
-                    )}
-                  </button>
+                {/* Auto-generating indicator - Mobile */}
+                {isGeneratingTitle && (
+                  <div className="p-2 text-purple-600">
+                    <Loader2 size={16} className="animate-spin" />
+                  </div>
                 )}
               </div>
             </div>
